@@ -29,6 +29,7 @@
 | `experiment_index.md` | 実験の一覧、条件、結果の要約、未実施との区別 | 実験の索引（生ログは原本） |
 | `literature/bower_2019.md` | Bower (2019) の整理 | 同論文の主張の要約 |
 | `literature/pci_dss_ecommerce_2017.md` | PCI DSS 補足文書の整理 | 同文書の主張の要約 |
+| `literature/riskiq_inside_magecart_2018.md` | RiskIQ/Flashpoint 報告書の整理（スキマーのグループごとの挙動） | 同報告書の主張の要約 |
 | `analysis/findings.md` | 判明したこと、卒論で主張できること（候補）と根拠の対応 | 主張と根拠の対応表 |
 | `analysis/open_issues.md` | 未解決事項、情報不足、資料間の矛盾 | 未解決事項の一覧 |
 
@@ -63,9 +64,12 @@
 | [B] | [BowerT-Industry-project-identifying-JavaScript-skimmers-on-high-value-websites.pdf](../BowerT-Industry-project-identifying-JavaScript-skimmers-on-high-value-websites.pdf) | Bower 論文（英語原文） |
 | [BJ] | [Bower先行研究論文(日本語).pdf](../Bower先行研究論文%28日本語%29.pdf) | Bower 論文の非公式日本語訳 |
 | [PCI] | [best_practices_securing_ecommerce.pdf](../best_practices_securing_ecommerce.pdf) | PCI DSS 補足文書（2017年4月） |
+| [RQ] | [Flashpoint_RiskIQ_Inside_MageCart.pdf](../参考文献/論文原文/Flashpoint_RiskIQ_Inside_MageCart.pdf) | RiskIQ/Flashpoint 報告書（2018年。[S P25] の [9]） |
 
 - 節番号は「§」、ページは「p.」、スライドは「P」で示します。
 - PoC のコード（`https://github.com/ntowa1114/pocv1`）は本リポジトリに含まれません。[H §11]
+- `product/` は空です（2026-10-24）。研究者の方針で、PoC は実施済みの事実として扱い、実験対象（5型のEC、検体、拡張機能、測定）の実装はまだ無いものとして設計します。決済方式は PCI の5型です（`research_decisions.md` C6）。
+- `参考文献/論文原文/` に、PCI 文書と Bower 論文の PDF の写しがあります（リポジトリ直下にも同じ PDF が残っています）。
 - `.git/` は管理用ディレクトリで、研究資料ではありません。
 
 ## 4. 出典・記述の区別
