@@ -1,5 +1,6 @@
 'use strict';
 // ダミーPSP psp.localhost:8081（D54）。加盟店オリジンからの正規送信にだけ CORS を許可する。
+// /psp.js: J型の PSP の JS（J1〜J3）。
 // /frame: I型の iFrame の中身（カード入力フォーム。I1、I2）。送信は同一オリジンの fetch で /pay へ（D49）。
 const { createReceiver } = require('../common/receiver');
 
@@ -27,6 +28,36 @@ document.getElementById('card-form').addEventListener('submit', function (ev) {
 </body></html>
 `;
 
+// /psp.js: J型の PSP の JS（J1、J2、J3）。加盟店ページが取得し、実行時に通常の DOM 要素でフォームを作る（D31。
+// Shadow DOM・iFrame は使わない）。送信は加盟店ページのオリジンから PSP の /pay へ fetch（D49。単純リクエスト）
+const PSP_JS = `(function () {
+  var mount = document.getElementById('payment-mount');
+  var form = document.createElement('form');
+  form.id = 'card-form';
+  form.autocomplete = 'off';
+  [['cardnumber', 'card number'], ['exp', 'MM/YY'], ['cvc', 'CVC'], ['name', 'name']].forEach(function (f) {
+    var i = document.createElement('input');
+    i.id = f[0]; i.name = f[0]; i.placeholder = f[1];
+    form.appendChild(i);
+  });
+  var b = document.createElement('button');
+  b.id = 'pay'; b.type = 'submit'; b.textContent = 'pay';
+  form.appendChild(b);
+  var res = document.createElement('p');
+  res.id = 'result';
+  mount.appendChild(form);
+  mount.appendChild(res);
+  form.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var body = new URLSearchParams();
+    ['cardnumber', 'exp', 'cvc', 'name'].forEach(function (n) { body.append(n, document.getElementById(n).value); });
+    fetch('http://psp.localhost:8081/pay', { method: 'POST', body: body })
+      .then(function (r) { res.textContent = 'psp:' + r.status; })
+      .catch(function (e) { res.textContent = 'error:' + e; });
+  });
+})();
+`;
+
 module.exports = createReceiver({
   name: 'psp',
   defaultPort: 8081,
@@ -34,6 +65,9 @@ module.exports = createReceiver({
   respond(req) {
     if (req.method === 'GET' && req.url.split('?')[0] === '/frame') {
       return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: FRAME_PAGE };
+    }
+    if (req.method === 'GET' && req.url.split('?')[0] === '/psp.js') {
+      return { status: 200, headers: { 'content-type': 'text/javascript; charset=utf-8' }, body: PSP_JS };
     }
     return { status: 200, body: 'ok' };
   },

@@ -1,5 +1,5 @@
 'use strict';
-// 1試行の実行（experiment_spec.md §1.3、§5、§6.2、§7.1）。実装済みの型は D と I（D56 の順序）。
+// 1試行の実行（experiment_spec.md §1.3、§5、§6.2、§7.1）。実装済みの型は D、I、J（D56 の順序）。
 // 使い方: node harness/run_trial.js <条件ID> [--out <出力先>]   （出力先の既定はリポジトリ直下の expt_log/）
 // 観測点 OX（拡張機能なし）だけ対応。OA・OB（拡張機能の読み込み）は拡張機能の実装後（段階6以降）。
 const fs = require('node:fs');
@@ -24,7 +24,7 @@ const readJsonl = (f) => fs.existsSync(f) ? fs.readFileSync(f, 'utf8').split('\n
 
 // 顧客役の操作（型ごと）。D型: 加盟店ページに入力して送信（D1〜D3）
 const FIELDS = ['cardnumber', 'exp', 'cvc', 'name'];
-const SKIMMER_FILES = { D: 'model_x.js', I: 'model_y.js' }; // 取得部（モデルX: D・J・A、モデルY: I。D31）
+const SKIMMER_FILES = { D: 'model_x.js', I: 'model_y.js', J: 'model_x.js' }; // 取得部（モデルX: D・J・A、モデルY: I。D31）
 const CUSTOMER = {
   // I型: 加盟店ページの PSP の iFrame に入力する（I1、I2、I4）。悪性は、先に偽フォームへ入力し、
   // 出し直された本物の iFrame にもう一度入力する（D25、§1.3）
@@ -41,6 +41,14 @@ const CUSTOMER = {
     for (const k of FIELDS) await fl.locator('#' + k).fill(entered[k]);
     await fl.locator('#pay').click();
     await fl.locator('#result:not(:empty)').waitFor({ timeout: 10000 });
+  },
+  // J型: 加盟店ページに PSP の JS がフォームを作る（J1〜J3）。作られるのを待ってから D型と同じ操作をする
+  async J(page, cond, entered) {
+    await page.goto('http://merchant.localhost:8080' + (cond.kind === 'M' ? '/checkout-j-m' : '/checkout-j'));
+    await page.waitForSelector('#card-form', { timeout: 10000 });
+    for (const k of FIELDS) await page.fill('#' + k, entered[k]);
+    await page.click('#pay');
+    await page.waitForFunction(() => document.getElementById('result').textContent !== '', null, { timeout: 10000 });
   },
   async D(page, cond, entered) {
     await page.goto('http://merchant.localhost:8080' + (cond.kind === 'M' ? '/checkout-m' : '/checkout'));

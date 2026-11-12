@@ -2,6 +2,7 @@
 // 加盟店 merchant.localhost:8080。
 // ダイレクトポスト型（D。D1〜D3）:  /checkout（正規）  /checkout-m（悪性。スキマー model_x.js を埋め込む）
 // iFrame 型（I。I1、I2）:           /checkout-i（正規）  /checkout-i-m（悪性。スキマー model_y.js を埋め込む）
+//   J 型（J1〜J3）:                   /checkout-j（正規）  /checkout-j-m（悪性。model_x.js）。入力欄は PSP の psp.js が作る
 //   I 型の加盟店ページに決済機能はなく、PSP の iFrame だけを置く。
 // 2つの違いは <script> の有無だけ。カード入力欄は加盟店ページの中にあり、送信は fetch で PSP へ直接出す（D49）。
 // 加盟店サーバーはカード情報を受け取らない（D3）。受信ログ receive_merchant.jsonl には GET だけが残るはず。
@@ -47,6 +48,17 @@ ${withSkimmer ? '<script src="/skimmer/send.js"></script>\n<script src="/skimmer
 `;
 }
 
+// J 型（J1〜J3）: 元の HTML に入力欄はなく、PSP の JS（psp.js）が実行時にフォームを作る。加盟店ページに決済処理はない
+function jsFormPage(withSkimmer) {
+  return `<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><title>checkout</title></head>
+<body>
+<div id="payment-mount"></div>
+<script src="http://psp.localhost:8081/psp.js"></script>
+${withSkimmer ? '<script src="/skimmer/send.js"></script>\n<script src="/skimmer/model_x.js"></script>\n' : ''}</body></html>
+`;
+}
+
 const STATIC = { '/skimmer/send.js': 'send.js', '/skimmer/model_x.js': 'model_x.js', '/skimmer/model_y.js': 'model_y.js' };
 
 module.exports = createReceiver({
@@ -58,6 +70,8 @@ module.exports = createReceiver({
     if (req.method === 'GET' && url === '/checkout-m') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: checkoutPage(true) };
     if (req.method === 'GET' && url === '/checkout-i') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: iframePage(false) };
     if (req.method === 'GET' && url === '/checkout-i-m') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: iframePage(true) };
+    if (req.method === 'GET' && url === '/checkout-j') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: jsFormPage(false) };
+    if (req.method === 'GET' && url === '/checkout-j-m') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: jsFormPage(true) };
     if (req.method === 'GET' && STATIC[url]) {
       return { status: 200, headers: { 'content-type': 'text/javascript; charset=utf-8' }, body: fs.readFileSync(path.join(SKIMMER_DIR, STATIC[url])) };
     }

@@ -88,8 +88,17 @@ test('I 型: frameUrl がなければ Referer のオリジンで発信元を判�
   const d = base(); d.cdp[1].frameUrl = null; d.cdp[1].referer = 'http://psp.localhost:8081/frame';
   assert.equal(evaluate({ cond: parseCondition('I-M-OX'), entered, identifier: ID, ...d }).valid, true);
 });
-test('D・I 以外の型は未実装として例外（黙って合格にしない）', () => {
-  assert.throws(() => evaluate({ cond: parseCondition('J-M-OX'), entered, identifier: ID, ...base() }), /未実装/);
+test('J 型: 発信元が加盟店ページなら合格。PSP のフレームからだと不合格', () => {
+  assert.equal(evaluate({ cond: parseCondition('J-M-OX'), entered, identifier: ID, ...base() }).valid, true);
+  const bad = base(); bad.cdp[1].frameUrl = 'http://psp.localhost:8081/frame';
+  assert.ok(failedIds(evaluate({ cond: parseCondition('J-M-OX'), entered, identifier: ID, ...bad })).includes('2'));
+});
+test('J 型: 加盟店サーバーに識別子が届いたら #3 不合格', () => {
+  const d = base(); d.receive.merchant.push({ method: 'POST', path: '/x', body: BODY });
+  assert.ok(failedIds(evaluate({ cond: parseCondition('J-M-OX'), entered, identifier: ID, ...d })).includes('3'));
+});
+test('D・I・J 以外の型は未実装として例外（黙って合格にしない）', () => {
+  assert.throws(() => evaluate({ cond: parseCondition('A-M-OX'), entered, identifier: ID, ...base() }), /未実装/);
 });
 
 test('条件IDの解析: R-M-* と不正な書式は拒否', () => {

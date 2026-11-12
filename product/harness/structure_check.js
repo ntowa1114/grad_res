@@ -1,12 +1,13 @@
 'use strict';
 // 構造チェックとビルド時の確認（experiment_spec.md §6.4）。EC と検体の実装が終わった時点で、型ごとに1回行う。
-// コードを変えたら再実施する。対象: D型（D1、D2）、I型（I1、I2、I3、S3）、検体（S4）。結果は標準出力に出す
+// コードを変えたら再実施する。対象: D型（D1、D2）、I型（I1、I2、I3、S3）、J型（J1、J2）、検体（S4）。結果は標準出力に出す
 // （保存場所は仕様にない。NOTES_assumptions.md に実施結果を記録する）。使い方: node harness/structure_check.js
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { chromium } = require('playwright');
+const { createCdpRecorder } = require('./cdp');
 const merchant = require('../merchant/server');
 const psp = require('../psp/server');
 const sinkhole = require('../sinkhole/server');
@@ -45,6 +46,20 @@ const readJsonl = (f) => fs.existsSync(f) ? fs.readFileSync(f, 'utf8').split('\n
     const inFrame = frame ? await frame.evaluate(() => document.querySelectorAll('input').length) : 0;
     add('I2', 'I型: 入力欄は iFrame の中にだけある', info.topInputs === 0 && inFrame === 4, `加盟店ページ本体の input=${info.topInputs}、iFrame の input=${inFrame}`);
     add('I3', 'I型: 親ページから iFrame の contentDocument を読むと null かエラー（SOP）', info.cd === null || String(info.cd).startsWith('error:'), `contentDocument=${info.cd}`);
+
+    // J1: CDP の記録で、PSP のオリジンから JS が取得される。J2: 元の HTML に入力欄がなく、JS の実行後に DOM に現れる
+    const p3 = await ctx.newPage();
+    const jCdp = path.join(dir, 'cdp_j.jsonl');
+    const rec = createCdpRecorder(ctx, p3, jCdp);
+    await rec.start();
+    await p3.goto(M + '/checkout-j');
+    await p3.waitForSelector('#card-form');
+    await rec.drain();
+    const jReqs = readJsonl(jCdp).filter((r) => r.method === 'GET' && r.url === 'http://psp.localhost:8081/psp.js');
+    add('J1', 'J型: PSP のオリジンから JS が取得される（CDP）', jReqs.length === 1 && jReqs[0].type === 'Script', `CDP の GET psp.js ${jReqs.length} 件、type=${jReqs[0] && jReqs[0].type}`);
+    const rawHtml = await new Promise((res, rej) => require('node:http').get({ host: '127.0.0.1', port: 8080, path: '/checkout-j' }, (r) => { let b = ''; r.on('data', (c) => { b += c; }); r.on('end', () => res(b)); }).on('error', rej)); // JS が動く前の、元の HTML（Node の名前解決は *.localhost を引けないので 127.0.0.1）
+    const domInputs = await p3.evaluate(() => ['cardnumber', 'exp', 'cvc', 'name'].every((n) => !!document.getElementById(n)));
+    add('J2', 'J型: 元の HTML に入力欄がなく、JS の実行後の DOM に現れる', !/<input/i.test(rawHtml) && domInputs, `元の HTML の <input>=${/<input/i.test(rawHtml)}、実行後の DOM に4欄=${domInputs}`);
 
     // S3: モデルY は、偽フォームに入力した後、出し直しの前に、ダミーPSP の受信ログに識別子がない
     const p2 = await ctx.newPage();
