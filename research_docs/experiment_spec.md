@@ -210,7 +210,7 @@
 | ダミーPSP | `http://psp.localhost:8081` |
 | sinkhole | `http://sinkhole.localhost:8082` |
 
-- 3つとも別サイト。eTLD+1 の差や証明書は扱わない（PoC と同じ限界）。`*.localhost` の名前解決は、実装の最初に確認する【未確認】。
+- 3つとも別サイト。eTLD+1 の差や証明書は扱わない（PoC と同じ限界）。`*.localhost` の名前解決は、WSL2 上の Playwright 同梱 Chromium 158 で、3つとも名前解決でき届いた【観測】（`product/NOTES_assumptions.md` #3、#22、#26。他のブラウザ・OS は対象外）。
 - 全送信（正規・悪性）は、preflight が起きない単純リクエスト（POST、`application/x-www-form-urlencoded`、独自ヘッダなし）にする。
 - ダミーPSP は、加盟店オリジンからの正規送信に CORS を許可する。スキマーは `fetch` を `mode: 'no-cors'` で sinkhole へ出す。sinkhole は CORS を返さない。
 - OPTIONS が1件でも観測されたら、設計の誤りとして試行を無効にする（§6.2）。
@@ -286,7 +286,7 @@
 
 **2本の突き合わせ**: 両者の記録の一致を確認する（D24 の正解記録の検証。§6.5）。
 
-【未確認】CDP で本文をどこまで取れるかは、実装して確かめる（§6.5 の T2 の検証項目にする）。
+【観測】CDP の本文は、WSL2 上の Playwright 同梱 Chromium 158 で、`fetch` の POST（`application/x-www-form-urlencoded`、同一セッションのトップフレーム）では、`D-N-OX-001`・`D-M-OX-001` の全 POST（3件）で取れた（`Network.requestWillBeSent` の `postData`。`product/NOTES_assumptions.md` #26、#28）。別オリジン iFrame・他の型・他の送信手段では未確認で、T2 の検証項目として条件ごとに取得率を記録し続ける。
 
 ### 5.2 識別子と記録の結びつけ
 
@@ -506,10 +506,11 @@ D13 の約束が守れていることを、査読者に示せる形で一か所�
 
 ## 11. 実装方針
 
-新しい決定はなく、D53〜D56 の要約。
+D53〜D56 の要約と、実行環境（2026-11-12 に研究者が選択。D番号は付けていない）。
 
 - **置き場所**: このリポジトリの `product/`（D53）。サブフォルダは `merchant/`、`psp/`、`sinkhole/`、`skimmer/`、`extension/`、`harness/` を想定。実験ログは `expt_log/`（D39）。
-- **技術**: Node.js + 素の JavaScript。測定の自動化は Playwright。ビルド工程は入れない（拡張機能のハッシュは、書いたファイルそのもの）。最初に小さく試して確認する細部は、Playwright での拡張機能読み込み、別オリジン iFrame の CDP 記録、`*.localhost` の名前解決（【未確認】）。
+- **技術**: Node.js + 素の JavaScript。測定の自動化は Playwright。ビルド工程は入れない（拡張機能のハッシュは、書いたファイルそのもの）。最初に小さく試した細部の結果は、`product/NOTES_assumptions.md` #3〜#7、#13〜#16（`*.localhost` の名前解決、別オリジン iFrame の CDP 記録、拡張機能の読み込みは実測済み。実験の環境でのスパイクは1回ずつ）。実験の試行は `product/harness/run_trial.js` で行い、記録は `expt_log/` に置く。
+- **実行環境**: WSL2（Ubuntu）上で、Playwright 1.65.0 同梱の Chromium（158.0.8127.18）を使う。起動は `channel: 'chromium'`（フル版の Chromium。新 headless）を必ず指定する。【観測】指定しない `headless: true` は Chrome Headless Shell を起動し、拡張機能が読み込まれず、別オリジン iFrame も別プロセス（OOPIF）にならなかった（`product/NOTES_assumptions.md` #14）。理由: ブラウザの版を Playwright の版で固定でき、自動更新で変わらない。Windows では Smart App Control が同梱 Chromium を未署名として止めた（同 #1、#11）。リポジトリは WSL の Linux 側に置く。実測は `product/NOTES_assumptions.md` #13〜#16。インストール済みの Chrome／Edge を使った Windows でのスパイク結果（#3〜#7）は、実験の環境ではない。
 - **順序**: D → I → J → A → R（D56）。各型で、EC・検体・案A・受信ログ・基準試行を通して動かす縦切り。
 - **スキマーが成立しない型**: 実装の誤りを直しても成立しなければ「測定対象外（スキマー不成立）」。第3モデルは置かない（D55）。
 - **締切**: 2026年12月中（日付は【未確認】。D56）。
