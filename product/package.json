@@ -1,0 +1,10 @@
+{
+  "name": "grad-res-product",
+  "private": true,
+  "version": "0.0.0",
+  "description": "卒業研究の実験環境（D53）",
+  "type": "commonjs",
+  "dependencies": {
+    "playwright": "1.65.0"
+  }
+}
