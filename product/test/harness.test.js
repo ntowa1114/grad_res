@@ -77,8 +77,19 @@ test('T2: CDP が本文を取れなくても件数が合えば合格（取得率
   const r = run('M', (d) => { d.cdp.forEach((c) => { if (c.method === 'POST') c.postData = null; }); });
   assert.equal(r.valid, true); assert.deepEqual(r.cdpBodyAvailable, { available: 0, total: 2 });
 });
-test('D 以外の型は未実装として例外（黙って合格にしない）', () => {
-  assert.throws(() => evaluate({ cond: parseCondition('I-M-OX'), entered, identifier: ID, ...base() }), /未実装/);
+test('I 型: 発信元フレームが PSP の iFrame なら #2 合格。加盟店ページからなら不合格', () => {
+  const ok = base(); ok.cdp[1].frameUrl = 'http://psp.localhost:8081/frame';
+  assert.equal(evaluate({ cond: parseCondition('I-M-OX'), entered, identifier: ID, ...ok }).valid, true);
+  const bad = base(); // frameUrl は加盟店ページのまま（D型の形）
+  const r = evaluate({ cond: parseCondition('I-M-OX'), entered, identifier: ID, ...bad });
+  assert.ok(failedIds(r).includes('2'));
+});
+test('I 型: frameUrl がなければ Referer のオリジンで発信元を判定する', () => {
+  const d = base(); d.cdp[1].frameUrl = null; d.cdp[1].referer = 'http://psp.localhost:8081/frame';
+  assert.equal(evaluate({ cond: parseCondition('I-M-OX'), entered, identifier: ID, ...d }).valid, true);
+});
+test('D・I 以外の型は未実装として例外（黙って合格にしない）', () => {
+  assert.throws(() => evaluate({ cond: parseCondition('J-M-OX'), entered, identifier: ID, ...base() }), /未実装/);
 });
 
 test('条件IDの解析: R-M-* と不正な書式は拒否', () => {

@@ -7,13 +7,17 @@ function createCdpRecorder(context, page, file) {
   fs.writeFileSync(file, '');
   const frameUrls = new Map(); // frameId -> url
   const pending = new Set();
-  const seen = new WeakSet();
+  const attaching = new WeakMap(); // frame -> Promise<boolean>（二重にセッションを張らない）
 
   function write(rec) { fs.appendFileSync(file, JSON.stringify(rec) + '\n'); }
 
   async function attach(session, label) {
     await session.send('Network.enable');
     await session.send('Page.enable');
+    try { // アタッチ前に確定済みのフレームの URL も取り込む（frameNavigated は再送されない）
+      const walk = (n) => { frameUrls.set(n.frame.id, n.frame.url); (n.childFrames || []).forEach(walk); };
+      walk((await session.send('Page.getFrameTree')).frameTree);
+    } catch (e) { /* 取れなくても、発信元は Referer で補う */ }
     session.on('Page.frameNavigated', (e) => frameUrls.set(e.frame.id, e.frame.url));
     session.on('Network.requestWillBeSent', (e) => {
       const p = (async () => {
@@ -36,10 +40,15 @@ function createCdpRecorder(context, page, file) {
     });
   }
 
-  async function tryAttachFrame(frame) {
-    if (frame === page.mainFrame() || seen.has(frame)) return;
-    try { const s = await context.newCDPSession(frame); seen.add(frame); await attach(s, 'frame'); }
-    catch (e) { /* 親と同じプロセスの iFrame は別セッションがない。親のセッションに出る */ }
+  function tryAttachFrame(frame) {
+    if (frame === page.mainFrame()) return Promise.resolve(false);
+    if (attaching.has(frame)) return attaching.get(frame);
+    const p = (async () => {
+      try { const s = await context.newCDPSession(frame); await attach(s, 'frame'); return true; }
+      catch (e) { attaching.delete(frame); return false; } // 親と同じプロセスの iFrame は別セッションがない。親のセッションに出る
+    })();
+    attaching.set(frame, p);
+    return p;
   }
 
   return {
@@ -48,6 +57,8 @@ function createCdpRecorder(context, page, file) {
       page.on('frameattached', (f) => { tryAttachFrame(f); });
       page.on('framenavigated', (f) => { tryAttachFrame(f); });
     },
+    // 現在ある全フレームへのセッション接続が済むまで待つ。iFrame に入力する前に呼ぶ（取りこぼし防止）
+    async settle() { await Promise.all(page.frames().map(tryAttachFrame)); },
     async drain() { while (pending.size) await Promise.all([...pending]); },
   };
 }

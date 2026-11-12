@@ -1,5 +1,5 @@
 'use strict';
-// 1試行の実行（experiment_spec.md §1.3、§5、§6.2、§7.1）。実装済みの型は D だけ（D56 の順序）。
+// 1試行の実行（experiment_spec.md §1.3、§5、§6.2、§7.1）。実装済みの型は D と I（D56 の順序）。
 // 使い方: node harness/run_trial.js <条件ID> [--out <出力先>]   （出力先の既定はリポジトリ直下の expt_log/）
 // 観測点 OX（拡張機能なし）だけ対応。OA・OB（拡張機能の読み込み）は拡張機能の実装後（段階6以降）。
 const fs = require('node:fs');
@@ -23,7 +23,25 @@ const sha256 = (file) => crypto.createHash('sha256').update(fs.readFileSync(file
 const readJsonl = (f) => fs.existsSync(f) ? fs.readFileSync(f, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l)) : [];
 
 // 顧客役の操作（型ごと）。D型: 加盟店ページに入力して送信（D1〜D3）
+const FIELDS = ['cardnumber', 'exp', 'cvc', 'name'];
+const SKIMMER_FILES = { D: 'model_x.js', I: 'model_y.js' }; // 取得部（モデルX: D・J・A、モデルY: I。D31）
 const CUSTOMER = {
+  // I型: 加盟店ページの PSP の iFrame に入力する（I1、I2、I4）。悪性は、先に偽フォームへ入力し、
+  // 出し直された本物の iFrame にもう一度入力する（D25、§1.3）
+  async I(page, cond, entered, cdp) {
+    await page.goto('http://merchant.localhost:8080' + (cond.kind === 'M' ? '/checkout-i-m' : '/checkout-i'));
+    if (cond.kind === 'M') {
+      for (const k of FIELDS) await page.fill('#skim-' + k, entered[k]);
+      await page.click('#skim-pay');
+      await page.waitForSelector('iframe');
+    }
+    const fl = page.frameLocator('iframe');
+    await fl.locator('#cardnumber').waitFor({ timeout: 10000 });
+    await cdp.settle(); // iFrame 用の CDP セッションが張れてから入力する
+    for (const k of FIELDS) await fl.locator('#' + k).fill(entered[k]);
+    await fl.locator('#pay').click();
+    await fl.locator('#result:not(:empty)').waitFor({ timeout: 10000 });
+  },
   async D(page, cond, entered) {
     await page.goto('http://merchant.localhost:8080' + (cond.kind === 'M' ? '/checkout-m' : '/checkout'));
     for (const k of ['cardnumber', 'exp', 'cvc', 'name']) await page.fill('#' + k, entered[k]);
@@ -56,7 +74,7 @@ async function runTrial(conditionId, { outRoot = path.join(REPO_ROOT, 'expt_log'
     cdpFile = path.join(dir, 'cdp.jsonl');
     const cdp = createCdpRecorder(context, page, cdpFile);
     await cdp.start();
-    await CUSTOMER[cond.type](page, cond, entered);
+    await CUSTOMER[cond.type](page, cond, entered, cdp);
     await page.waitForTimeout(SETTLE_MS);
     await cdp.drain();
   } catch (e) {
@@ -70,7 +88,7 @@ async function runTrial(conditionId, { outRoot = path.join(REPO_ROOT, 'expt_log'
   meta.hashes = {
     extension: null, // 観測点 OX（拡張機能なし）
     skimmer: cond.kind === 'M'
-      ? { 'send.js': sha256(path.join(__dirname, '../skimmer/send.js')), 'model_x.js': sha256(path.join(__dirname, '../skimmer/model_x.js')) }
+      ? { 'send.js': sha256(path.join(__dirname, '../skimmer/send.js')), [SKIMMER_FILES[cond.type]]: sha256(path.join(__dirname, '../skimmer', SKIMMER_FILES[cond.type])) }
       : null, // 正規の条件はスキマーを埋め込まない
   };
   if (error) {

@@ -1,7 +1,7 @@
 'use strict';
 // 毎試行の自動チェック #1〜#5（experiment_spec.md §6.2）と、受信ログ・CDP の突き合わせ（D24、§6.5 T2）。
 // 純粋関数。入力は記録（配列）だけで、ブラウザやサーバーには触れない。
-// 実装済みの型は D だけ（D56 の順序）。他の型は例外にする（黙って合格にしない）。
+// 実装済みの型は D と I（D56 の順序）。他の型は例外にする（黙って合格にしない）。
 const PUBLIC_TEST_PANS = new Set([ // 公開テスト番号（私が選んだ一覧。NOTES_assumptions.md #23）
   '4242424242424242', '4000056655665556', '5555555555554444', '2223003122003222',
   '378282246310005', '6011111111111117', '4111111111111111',
@@ -9,7 +9,11 @@ const PUBLIC_TEST_PANS = new Set([ // 公開テスト番号（私が選んだ一
 const ORIGINS = {
   merchant: 'http://merchant.localhost:8080', psp: 'http://psp.localhost:8081', sinkhole: 'http://sinkhole.localhost:8082',
 };
-const LEGIT = { D: { url: ORIGINS.psp + '/pay', senderOrigin: ORIGINS.merchant } }; // §3.3
+// 正規宛先と、発信元のオリジン（§3.3、毎試行 #2）。D型は加盟店ページから、I型は PSP の iFrame から出る
+const LEGIT = {
+  D: { url: ORIGINS.psp + '/pay', senderOrigin: ORIGINS.merchant },
+  I: { url: ORIGINS.psp + '/pay', senderOrigin: ORIGINS.psp },
+};
 
 const fields = (body) => Object.fromEntries(new URLSearchParams(body || ''));
 function sameAsEntered(rec, entered) {
@@ -41,7 +45,7 @@ function evaluate({ cond, entered, identifier, receive, cdp }) {
   add(2, '正規宛先と発信元', !!one && one.url === legit.url && sender === legit.senderOrigin,
     `sinkhole 以外の CDP の POST ${nonSink.length} 件${one ? `、宛先=${one.url}、発信元=${sender}` : ''}`);
 
-  // #3 加盟店サーバーの受信: D型は識別子が届かない（D3）
+  // #3 加盟店サーバーの受信: D・I型は識別子が届かない（D3、I5）
   const merchantWithId = receive.merchant.filter((r) => JSON.stringify(r).includes(identifier));
   add(3, '加盟店サーバーの受信', merchantWithId.length === 0, `加盟店の識別子つき受信 ${merchantWithId.length} 件`);
 
