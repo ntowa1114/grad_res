@@ -42,23 +42,26 @@
 | 32 | 2026-11-12 | 段階6（I型） | 【実装判断】 | `harness/cdp.js` を直した: ①同じフレームに二重にセッションを張らない（`frameattached` と `framenavigated` の両方で張ろうとして、二重記録になり得るため）、②アタッチ時に `Page.getFrameTree` で既存フレームの URL を取り込む、③`settle()` を追加し、iFrame に入力する前に全フレームのセッション接続を待つ（取りこぼし防止）。D型の記録は変わらない（再実行で D-M-OX 一時試行が合格） | 設計上の修正 | harness 全体 | 未 |
 | 33 | 2026-11-12 | 段階6（I型） | 【観測】 | 構造チェック（§6.4。`node harness/structure_check.js`、1回）: D1、D2、I1、I2、I3、S3、S4 が合格（I3 は `contentDocument=null`）。S3 の確認時点は「偽フォームへの入力後、出し直された iFrame が現れ、さらに500ms 待った後」で、「出し直しの前」を厳密には切り出せていない（その時点で PSP に識別子つきのリクエストがないことを確認）。S4 は送信部が `send.js` 1ファイルで、取得部が自前の送信手段を持たない確認（2ファイルのハッシュ一致ではない）。R・J・A 型の構造チェックは未実装（各型の実装時） | 実測（1回） | §6.4 | 未 |
 | 34 | 2026-11-12 | 段階6（I型） | 【観測】 | 基準試行を `expt_log/` に実行: `I-N-OX-001`、`I-M-OX-001`（各1回、コミット 452c4a8、作業ツリーはクリーン）。2試行とも有効（#1〜#5、#P、#T2 全て合格）。CDP の本文取得は 1/1、2/2。I-M-OX の顧客役は、偽フォームと本物の iFrame に同じ値を2回入力した（識別子も同じ） | 実測（各1回） | E8、E9 | 未 |
+| 35 | 2026-11-12 | 段階7（J型） | 【実装判断】 | J型: PSP が `GET /psp.js` を配り、加盟店ページ（`/checkout-j`、`/checkout-j-m`）は `<div id="payment-mount">` と `<script src=PSPの/psp.js>` だけを持つ。`psp.js` は実行時に、通常の DOM 要素（Shadow DOM・iFrame なし。D31）でフォームを作り、submit で加盟店ページのオリジンから `/pay` へ `fetch` する（D49）。そのため #2 の発信元は加盟店（`LEGIT.J`）。取得部は D型と同じ `model_x.js`（変更なし）。`psp.js` の中身は私が書いた自作（D12、D13）で、PCI p.15-16 の記述との整合は本文の範囲の理解（【未確認】） | D12、D13、D31、D49 | J型の EC | 未 |
+| 36 | 2026-11-12 | 段階7（J型） | 【観測】 | 構造チェック（`node harness/structure_check.js`、1回）: J1（CDP の GET psp.js 1件、type=Script）、J2（元の HTML に `<input>` なし。実行後の DOM に4欄）が合格。D1、D2、I1〜I3、S3、S4 も引き続き合格。元の HTML の取得は Node の `http` で `127.0.0.1:8080` へ（Playwright の API リクエストは `*.localhost` を名前解決できない） | 実測（1回） | §6.4 | 未 |
+| 37 | 2026-11-12 | 段階7（J型） | 【観測】 | 基準試行を `expt_log/` に実行: `J-N-OX-001`、`J-M-OX-001`（各1回、コミット 81682d4、作業ツリーはクリーン）。2試行とも有効（#1〜#5、#P、#T2 全て合格）。**モデルX（改造なし）は、J型の動的に作られた入力欄を読め、sinkhole に識別子つきの悪性 POST が1件、全項目一致で届いた（1回）**。U-21 の【仮説】（読める）は、この条件（`channel: 'chromium'`、通常の DOM、`psp.js` は自作）で支持された。一般化はしない。CDP の本文取得は 1/1、2/2。事前に一時フォルダで同じ条件を1回走らせ（本試行ではない）、同じ結果だった | 実測（各1回） | E10、E11（予定） | 未 |
 
-## 引き継ぎ（2026-11-12 更新。D型・I型の縦切りが終わった時点）
+## 引き継ぎ（2026-11-12 更新。D型・I型・J型の縦切りが終わった時点）
 
 ### 依頼の範囲（研究者の指示の要約）
-- 実装の順序は D → I → J → A → R（D56）。各型で、EC・検体・案A・受信ログ・基準試行を通す縦切り。**D型・I型の「拡張機能なしの基準試行」までが終わっている**。拡張機能（案A・案B。観測点 OA・OB）の実装は未着手。XHR はしない（D38①）。
+- 実装の順序は D → I → J → A → R（D56）。各型で、EC・検体・案A・受信ログ・基準試行を通す縦切り。**D型・I型・J型の「拡張機能なしの基準試行」までが終わっている**。拡張機能（案A・案B。観測点 OA・OB）の実装は未着手。XHR はしない（D38①）。
 - 守ること: 変更してよいのは `product/` と `expt_log/`。原本は変更しない。`research_docs/` の更新は、`research_docs/CLAUDE.md` §8 の規則に従い、更新前に研究者へ知らせて確認を取る。`.env` を読まない。テストを勝手にスキップしない。D13（`*.localhost` のみ、公開テスト番号のみ）。全送信は単純リクエスト（D54。OPTIONS が出たら試行は無効）。正規送信は `fetch`（D49）。実測と予測を区別する。
 - 進め方: 作業計画を先に示して確認を取り、小さく段階的に進める。1段階ごとに報告する。仮定・未確認はこの表に追記する。基準試行（`expt_log/`）は、コードをコミットしてから実行する（`meta.json` に版が残らないため）。
 
 ### 終わったこと
 - 実行環境: WSL2 + Playwright 同梱 Chromium 158（`channel: 'chromium'` 必須。#14）。`research_docs/experiment_spec.md` §11 に反映済み。
-- 部品: `common/receiver.js`、`psp/`（`/pay`、`/frame`）、`sinkhole/`、`merchant/`（D型 `/checkout`・`/checkout-m`、I型 `/checkout-i`・`/checkout-i-m`）、`skimmer/`（`send.js` 共通、`model_x.js`＝D型、`model_y.js`＝I型）、`harness/`（`ids.js`、`cdp.js`、`checks.js`、`run_trial.js`、`structure_check.js`）。
-- 基準試行（`expt_log/`、各1回、全て有効）: `D-N-OX-001`、`D-M-OX-001`、`I-N-OX-001`、`I-M-OX-001`。`research_docs/experiment_index.md`（E6〜E9）、`analysis/findings.md`（F11〜F14）に反映済み。
-- テスト: `node --test test/harness.test.js test/receivers.test.js`（25件）。構造チェック: `node harness/structure_check.js`（D1、D2、I1〜I3、S3、S4）。1試行の実行: `node harness/run_trial.js <条件ID>`（例 `J-M-OX`。出力先の既定は `expt_log/`、`--out <dir>` で変更）。
-- コミット済み（`research-docs-d49-d56` ブランチ。最新 ebe4814）。
+- 部品: `common/receiver.js`、`psp/`（`/pay`、`/frame`）、`sinkhole/`、`merchant/`（D型 `/checkout`・`/checkout-m`、I型 `/checkout-i`・`/checkout-i-m`、J型 `/checkout-j`・`/checkout-j-m`）。`psp/` は `/pay`、`/frame`、`/psp.js`、`skimmer/`（`send.js` 共通、`model_x.js`＝D型、`model_y.js`＝I型）、`harness/`（`ids.js`、`cdp.js`、`checks.js`、`run_trial.js`、`structure_check.js`）。
+- 基準試行（`expt_log/`、各1回、全て有効）: `D-N-OX-001`、`D-M-OX-001`、`I-N-OX-001`、`I-M-OX-001`（E6〜E9、F11〜F14 として `research_docs/` に反映済み）、`J-N-OX-001`、`J-M-OX-001`（**`research_docs/` へは未反映**。`experiment_index.md` の E10・E11、`analysis/findings.md`、`open_issues.md` U-21 が更新待ち。`expt_log/` のコミットも未）。
+- テスト: `node --test test/harness.test.js test/receivers.test.js`（27件）。構造チェック: `node harness/structure_check.js`（D1、D2、I1〜I3、J1、J2、S3、S4）。1試行の実行: `node harness/run_trial.js <条件ID>`（例 `J-M-OX`。出力先の既定は `expt_log/`、`--out <dir>` で変更）。
+- コミット済み（`research-docs-d49-d56` ブランチ。コード最新 81682d4）。
 
 ### 次にやること（研究者に選んでもらう。決まっていなければ最初に質問する）
-- 案1: J型（JavaScriptフォーム）。PSP の JS が加盟店ページ内に通常の DOM 要素でフォームを作り（D31）、モデルX がそれを読めるかは【仮説】（`research_docs/analysis/open_issues.md` U-21）。`harness/checks.js` の `LEGIT` に J を足し、`CUSTOMER.J`、`SKIMMER_FILES.J`、構造チェック（J1、J2）を追加する。→ A → R の順に続ける。
+- 案1（**完了。#35〜#37**）: J型（JavaScriptフォーム）。PSP の JS が加盟店ページ内に通常の DOM 要素でフォームを作り（D31）、モデルX がそれを読めるかは【仮説】（`research_docs/analysis/open_issues.md` U-21）。`harness/checks.js` の `LEGIT` に J を足し、`CUSTOMER.J`、`SKIMMER_FILES.J`、構造チェック（J1、J2）を追加する。→ A → R の順に続ける。
 - 案2: D型・I型の拡張機能（案A・案B）。`extension/` を作り、`run_trial.js` を OA・OB に対応させる。拡張機能の読み込みは `--load-extension` と `Extensions.loadUnpacked` の両方が動いた（#15）。記録の読み出しは、拡張機能のページから `chrome.storage.local.get`（#7、#16）。
 - どちらでも、作業前に計画を示して確認を取る。
 
