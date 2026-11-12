@@ -9,16 +9,21 @@
 2. `research_docs/research_decisions.md`（決まっていること・未確定のこと）
 3. 作業内容に応じて次を読む
    - 用語・観測レベル: `research_docs/observation_model.md`
-   - 実験: `research_docs/experiment_index.md`、原本 `260930_poc実験9月の結果.md`
+   - 実験の設計・テスト: `research_docs/experiment_spec.md`
+   - 実験の実施記録: `research_docs/experiment_index.md`、原本 `260930_poc実験9月の結果.md`
    - 先行研究: `research_docs/literature/`
    - 主張・根拠・未解決事項: `research_docs/analysis/`
+
+**`research_docs/archive/` は、作業前に読みません。** 過去の版と経緯の置き場で、現行の決定や現状を表しません。研究者が経緯を尋ねたときだけ参照します。
 
 ## 2. 原本と正本
 
 - リポジトリ直下の既存資料（引き継ぎ資料、PDF、実験記録、xlsx）は**原本**です。変更・削除・移動しません。
-- 研究方針の最新は `研究引き継ぎ_確定事項_2026-10-24.md` です。`卒論進捗発表_v5_内容まとめ.md` は 10/19 時点のスナップショットで、方針の正本ではありません。
-- 実験の生ログ・詳細は原本が正本で、`research_docs/experiment_index.md` は要約と参照のみです。
-- 資料間の矛盾は、勝手にどちらかを正しいと判断せず、統合もしません。`research_docs/analysis/open_issues.md` に両方の内容と出典を記録します。
+- **現行ファイル（`research_docs/` 直下、`literature/`、`analysis/`）には、決定と現状だけを書きます。** 過去の版、方針変更の経緯、解消済みの論点は `research_docs/archive/` に移します。
+- **決定事項の正本は、現行の `research_docs/`（`research_decisions.md`）です。** 原本の `研究引き継ぎ_確定事項_2026-10-24.md` は 2026-10-24 時点の記録で、その後に更新された決定があります。決定について原本と現行が食い違うときは、現行を優先します。原本の古い記述の一覧は `research_docs/archive/原本との差分.md` にあります。
+- **実験の生ログ・詳細と、文献の主張の正本は原本です。** `research_docs/experiment_index.md` と `research_docs/literature/` は要約と参照のみです。
+- `卒論進捗発表_v5_内容まとめ.md` は 10/19 時点のスナップショットで、方針の正本ではありません。
+- 資料間の矛盾は、勝手にどちらかを正しいと判断せず、統合もしません。未解決のものは `research_docs/analysis/open_issues.md` に、両方の内容と出典を記録します。
 
 ## 3. 事実・解釈・仮説の区別
 
@@ -56,7 +61,7 @@
 - 実験結果の数値・条件を変更・創作しない。
 - 既存ログを丸写しせず、要約と原本への参照（ファイル名と見出し）を書く。
 - 新しい実験を記録するときは、`research_docs/experiment_index.md` に ID・条件・結果・参照先を追加し、実施済みと未実施を区別する。
-- 新しい実験の詳細ログの置き場所は、まだ決まっていない。記録を作る前に、研究者に置き場所を確認する。
+- 新しい実験の詳細ログの置き場所は、リポジトリ直下の `expt_log/`（条件ID → 試行ごとのフォルダ。D39、`research_docs/experiment_spec.md` §7.1）。生ログを `research_docs/` に写さない。
 - 「観測できなかった」は、①案Aの実装不足、②MV3の構造的限界、③ブラウザを通らない外縁、のどれかを区別して書く。（`research_docs/observation_model.md`）
 - 実測済みか、仕様からの予測かを必ず区別する。
 
@@ -79,16 +84,18 @@
 
 ## 8. 文書の更新ルール
 
-何が変わったかに応じて、次のファイルを更新する。方針の変更は上書きせず、旧→新を追記する。
+何が変わったかに応じて、次のファイルを更新する。**現行ファイルは上書きして最新にする。** 旧→新、理由、日付は `research_docs/archive/decisions_history.md`（なければ作る）に追記する。経緯を消さないためで、現行ファイルには書かない。
 
 | 変わったこと | 更新するファイル |
 |---|---|
-| 研究方針・設計の決定、変更 | `research_docs/research_decisions.md`（旧→新、理由、日付を追記）。影響する `research_docs/research_plan.md`、`research_docs/observation_model.md` |
-| 決済方式の分類（4型/5型）の確定 | `research_docs/research_decisions.md`（Q1）、`research_docs/observation_model.md` §3、`research_docs/research_plan.md` §5、`research_docs/literature/pci_dss_ecommerce_2017.md` §4、`research_docs/analysis/open_issues.md`（E-1） |
-| 符号化・難読化の扱いの確定 | `research_docs/research_decisions.md`（Q2）、`research_docs/observation_model.md` §5、`research_docs/analysis/open_issues.md`（E-2） |
-| RQ・評価基準（○/△/×）の確定 | `research_docs/research_plan.md` §4、`research_docs/observation_model.md` §2, §6、`research_docs/research_decisions.md`（Q3, Q4）、`research_docs/analysis/open_issues.md`（U-1, U-2） |
-| 新しい実験の実施 | `research_docs/experiment_index.md`、`research_docs/analysis/findings.md`。未実施の項目に当たる場合は未実施表から移す |
+| 研究方針・設計の決定、変更 | `research_docs/research_decisions.md`（現行を上書き）、`research_docs/archive/decisions_history.md`（旧→新、理由、日付）。影響する `research_docs/research_plan.md`、`research_docs/observation_model.md`、`research_docs/experiment_spec.md` |
+| 決済方式の分類の変更 | `research_docs/observation_model.md`（決済方式の節）、`research_docs/research_plan.md`（範囲の節）、`research_docs/experiment_spec.md`（EC型の節）、`research_docs/literature/pci_dss_ecommerce_2017.md`（本研究との関係の節） |
+| 符号化・難読化の扱いの変更 | `research_docs/research_decisions.md`、`research_docs/observation_model.md`（スキマーモデルの節）、`research_docs/experiment_spec.md`（スキマーの節） |
+| RQ・評価基準（○/△/×）の確定 | `research_docs/research_plan.md`（研究課題の節）、`research_docs/observation_model.md`（観測レベルと評価基準の節）、`research_docs/experiment_spec.md`、`research_docs/research_decisions.md`、`research_docs/analysis/open_issues.md` |
+| 用語の変更・追加 | `research_docs/observation_model.md`（用語表）と、その用語を使う現行ファイル。旧用語は `research_docs/archive/decisions_history.md` に記録 |
+| 新しい実験の実施 | `research_docs/experiment_index.md`、`research_docs/analysis/findings.md`、`research_docs/experiment_spec.md`（結果の記録形式に従う）。未実施の項目に当たる場合は未実施表から移す |
 | 先行研究・資料の追加 | `research_docs/literature/` に1件1ファイル。`research_docs/README.md` の一覧と出典略称に追記 |
-| 未確認事項・矛盾の解消 | `research_docs/analysis/open_issues.md`（解消の経緯を残し、削除しない）。関連ファイルの【未確認】表記も更新 |
+| 未確認事項・矛盾の解消 | `research_docs/analysis/open_issues.md` から削除し、解消の経緯（解消日、内容、出典）を `research_docs/archive/open_issues_resolved.md`（なければ作る）に移す。関連ファイルの【未確認】表記も更新 |
+| 原本の記述が現行の決定とずれた | `research_docs/archive/原本との差分.md` に、原本の記述・現行の決定・出典を追記。原本は変更しない |
 
-- ID の体系: 決定は D1〜、方針変更は C1〜、決定に関わる論点は Q1〜（`research_docs/research_decisions.md`）。矛盾は E-1〜、未確認事項は U-1〜（`research_docs/analysis/open_issues.md`）。実験は E1〜E5（`research_docs/experiment_index.md`。矛盾の E-1〜 とはハイフンの有無で区別する）。
+- ID の体系: 決定は D1〜、決定に関わる論点は Q1〜（`research_docs/research_decisions.md`）。方針変更は C1〜（`research_docs/archive/decisions_history.md`）。矛盾は E-1〜、未確認事項は U-1〜（`research_docs/analysis/open_issues.md`。解消後は `research_docs/archive/open_issues_resolved.md`）。実験は E1〜（`research_docs/experiment_index.md`。矛盾の E-1〜 とはハイフンの有無で区別する）。
