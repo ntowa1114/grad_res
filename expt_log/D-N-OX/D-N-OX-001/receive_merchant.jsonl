@@ -1,0 +1,2 @@
+{"runId":"D-N-OX-001","t":"2026-11-12T14:25:23.027Z","server":"merchant","method":"GET","path":"/checkout","origin":null,"referer":null,"contentType":null,"body":""}
+{"runId":"D-N-OX-001","t":"2026-11-12T14:25:23.057Z","server":"merchant","method":"GET","path":"/favicon.ico","origin":null,"referer":"http://merchant.localhost:8080/checkout","contentType":null,"body":""}

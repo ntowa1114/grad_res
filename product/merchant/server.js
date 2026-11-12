@@ -1,0 +1,54 @@
+'use strict';
+// 加盟店 merchant.localhost:8080。ダイレクトポスト型（D）の決済ページを返す（D1〜D3）。
+//   /checkout   : 正規（スキマーなし）   /checkout-m : 悪性（スキマー model_x.js を埋め込む）
+// 2つの違いは <script> の有無だけ。カード入力欄は加盟店ページの中にあり、送信は fetch で PSP へ直接出す（D49）。
+// 加盟店サーバーはカード情報を受け取らない（D3）。受信ログ receive_merchant.jsonl には GET だけが残るはず。
+const fs = require('node:fs');
+const path = require('node:path');
+const { createReceiver } = require('../common/receiver');
+
+const SKIMMER_DIR = path.join(__dirname, '..', 'skimmer');
+const PSP_PAY_URL = 'http://psp.localhost:8081/pay';
+
+function checkoutPage(withSkimmer) {
+  return `<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><title>checkout</title></head>
+<body>
+<form id="card-form" autocomplete="off">
+  <input id="cardnumber" name="cardnumber" placeholder="card number">
+  <input id="exp" name="exp" placeholder="MM/YY">
+  <input id="cvc" name="cvc" placeholder="CVC">
+  <input id="name" name="name" placeholder="name">
+  <button id="pay" type="submit">pay</button>
+</form>
+<p id="result"></p>
+<script>
+document.getElementById('card-form').addEventListener('submit', function (ev) {
+  ev.preventDefault();
+  var body = new URLSearchParams();
+  ['cardnumber', 'exp', 'cvc', 'name'].forEach(function (n) { body.append(n, document.getElementById(n).value); });
+  fetch(${JSON.stringify(PSP_PAY_URL)}, { method: 'POST', body: body })
+    .then(function (r) { document.getElementById('result').textContent = 'psp:' + r.status; })
+    .catch(function (e) { document.getElementById('result').textContent = 'error:' + e; });
+});
+</script>
+${withSkimmer ? '<script src="/skimmer/send.js"></script>\n<script src="/skimmer/model_x.js"></script>\n' : ''}</body></html>
+`;
+}
+
+const STATIC = { '/skimmer/send.js': 'send.js', '/skimmer/model_x.js': 'model_x.js' };
+
+module.exports = createReceiver({
+  name: 'merchant',
+  defaultPort: 8080,
+  respond(req) {
+    const url = req.url.split('?')[0];
+    if (req.method === 'GET' && url === '/checkout') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: checkoutPage(false) };
+    if (req.method === 'GET' && url === '/checkout-m') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: checkoutPage(true) };
+    if (req.method === 'GET' && STATIC[url]) {
+      return { status: 200, headers: { 'content-type': 'text/javascript; charset=utf-8' }, body: fs.readFileSync(path.join(SKIMMER_DIR, STATIC[url])) };
+    }
+    return { status: 404, body: 'not found' };
+  },
+});
+if (require.main === module) module.exports.start().then((p) => console.log('merchant listening on 127.0.0.1:' + p));
