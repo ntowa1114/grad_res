@@ -1,6 +1,6 @@
 'use strict';
 // 構造チェックとビルド時の確認（experiment_spec.md §6.4）。EC と検体の実装が終わった時点で、型ごとに1回行う。
-// コードを変えたら再実施する。対象: D型（D1、D2）、I型（I1、I2、I3、S3）、J型（J1、J2）、検体（S4）。結果は標準出力に出す
+// コードを変えたら再実施する。対象: D型（D1、D2）、A型（A1）、I型（I1、I2、I3、S3）、J型（J1、J2）、検体（S4）。結果は標準出力に出す
 // （保存場所は仕様にない。NOTES_assumptions.md に実施結果を記録する）。使い方: node harness/structure_check.js
 const fs = require('node:fs');
 const os = require('node:os');
@@ -33,6 +33,12 @@ const readJsonl = (f) => fs.existsSync(f) ? fs.readFileSync(f, 'utf8').split('\n
     const merchantGets = readJsonl(path.join(dir, 'receive_merchant.jsonl')).filter((r) => r.method === 'GET' && r.path === '/checkout');
     add('D1', 'D型: 決済ページが加盟店サーバーから配られる', merchantGets.length === 1, `加盟店の GET /checkout ${merchantGets.length} 件`);
     add('D2', 'D型: カード入力欄が最上位フレームの DOM にある', topInputs, `最上位の DOM に4欄=${topInputs}`);
+
+    // A1: 決済ページとフォームが加盟店サーバーから配られる（入力欄は最上位フレームの DOM。送信先は加盟店の /pay-api）
+    await page.goto(M + '/checkout-a');
+    const aInfo = await page.evaluate(() => ({ inputs: ['cardnumber', 'exp', 'cvc', 'name'].every((n) => !!document.getElementById(n)), iframes: document.querySelectorAll('iframe').length, script: document.querySelector('script:not([src])').textContent.includes('/pay-api') }));
+    const aGets = readJsonl(path.join(dir, 'receive_merchant.jsonl')).filter((r) => r.method === 'GET' && r.path === '/checkout-a');
+    add('A1', 'A型: 決済ページとフォームが加盟店サーバーから配られる（送信先は加盟店の /pay-api）', aGets.length === 1 && aInfo.inputs && aInfo.iframes === 0 && aInfo.script, `加盟店の GET /checkout-a ${aGets.length} 件、最上位の DOM に4欄=${aInfo.inputs}、iframe=${aInfo.iframes}、送信先が /pay-api=${aInfo.script}`);
 
     // I1: iFrame の src のオリジンが PSP。I2: 入力欄は iFrame の中にだけあり、加盟店ページ本体にはない。I3: SOP
     await page.goto(M + '/checkout-i');

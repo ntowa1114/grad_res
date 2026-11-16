@@ -2,6 +2,7 @@
 // 加盟店 merchant.localhost:8080。
 // ダイレクトポスト型（D。D1〜D3）:  /checkout（正規）  /checkout-m（悪性。スキマー model_x.js を埋め込む）
 // iFrame 型（I。I1、I2）:           /checkout-i（正規）  /checkout-i-m（悪性。スキマー model_y.js を埋め込む）
+// A 型（A1〜A3）:                   /checkout-a（正規）  /checkout-a-m（悪性。model_x.js）。送信先は加盟店の /pay-api（PSP へ中継）
 //   J 型（J1〜J3）:                   /checkout-j（正規）  /checkout-j-m（悪性。model_x.js）。入力欄は PSP の psp.js が作る
 //   I 型の加盟店ページに決済機能はなく、PSP の iFrame だけを置く。
 // 2つの違いは <script> の有無だけ。カード入力欄は加盟店ページの中にあり、送信は fetch で PSP へ直接出す（D49）。
@@ -12,6 +13,7 @@ const { createReceiver } = require('../common/receiver');
 
 const SKIMMER_DIR = path.join(__dirname, '..', 'skimmer');
 const PSP_PAY_URL = 'http://psp.localhost:8081/pay';
+const http = require('node:http');
 
 function checkoutPage(withSkimmer) {
   return `<!doctype html>
@@ -59,12 +61,31 @@ ${withSkimmer ? '<script src="/skimmer/send.js"></script>\n<script src="/skimmer
 `;
 }
 
+// A 型（A1〜A3）: 決済ページとフォームは加盟店が配る。送信は同一オリジンの fetch で加盟店の /pay-api へ（A2。D49）。
+// 加盟店サーバーが PSP の /pay へ中継する（A3。ブラウザの外。外縁③）。
+function apiPage(withSkimmer) {
+  return checkoutPage(withSkimmer).replace(JSON.stringify(PSP_PAY_URL), JSON.stringify('/pay-api'));
+}
+
+// A3: 加盟店サーバー → PSP。Node の名前解決は *.localhost を引けない場合があるので 127.0.0.1 へ、Host だけ PSP にする。
+// 送信元を PSP の受信ログで区別できるよう User-Agent に merchant-server を付ける（Origin は付けない）
+function forwardToPsp(body) {
+  return new Promise((resolve, reject) => {
+    const req = http.request({
+      host: '127.0.0.1', port: 8081, path: '/pay', method: 'POST',
+      headers: { host: 'psp.localhost:8081', 'content-type': 'application/x-www-form-urlencoded', 'content-length': Buffer.byteLength(body), 'user-agent': 'merchant-server' },
+    }, (res) => { res.resume(); res.on('end', () => resolve(res.statusCode)); });
+    req.on('error', reject);
+    req.end(body);
+  });
+}
+
 const STATIC = { '/skimmer/send.js': 'send.js', '/skimmer/model_x.js': 'model_x.js', '/skimmer/model_y.js': 'model_y.js' };
 
 module.exports = createReceiver({
   name: 'merchant',
   defaultPort: 8080,
-  respond(req) {
+  async respond(req, body) {
     const url = req.url.split('?')[0];
     if (req.method === 'GET' && url === '/checkout') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: checkoutPage(false) };
     if (req.method === 'GET' && url === '/checkout-m') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: checkoutPage(true) };
@@ -72,6 +93,11 @@ module.exports = createReceiver({
     if (req.method === 'GET' && url === '/checkout-i-m') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: iframePage(true) };
     if (req.method === 'GET' && url === '/checkout-j') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: jsFormPage(false) };
     if (req.method === 'GET' && url === '/checkout-j-m') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: jsFormPage(true) };
+    if (req.method === 'GET' && url === '/checkout-a') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: apiPage(false) };
+    if (req.method === 'GET' && url === '/checkout-a-m') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: apiPage(true) };
+    if (req.method === 'POST' && url === '/pay-api') {
+      try { return { status: await forwardToPsp(body), body: 'ok' }; } catch (e) { return { status: 502, body: 'psp unreachable' }; }
+    }
     if (req.method === 'GET' && STATIC[url]) {
       return { status: 200, headers: { 'content-type': 'text/javascript; charset=utf-8' }, body: fs.readFileSync(path.join(SKIMMER_DIR, STATIC[url])) };
     }

@@ -19,7 +19,7 @@ function createReceiver({ name, defaultPort, corsAllowOrigin = null, respond }) 
   function handler(req, res) {
     const chunks = [];
     req.on('data', (c) => chunks.push(c));
-    req.on('end', () => {
+    req.on('end', async () => {
       const body = Buffer.concat(chunks).toString('utf8');
       const origin = req.headers['origin'] || null;
       const preflight = req.method === 'OPTIONS';
@@ -30,6 +30,7 @@ function createReceiver({ name, defaultPort, corsAllowOrigin = null, respond }) 
         path: req.url,
         origin,
         referer: req.headers['referer'] || null,
+        userAgent: req.headers['user-agent'] || null, // A型: PSP への送信が加盟店サーバーからかを区別する（NOTES #38）
         contentType: req.headers['content-type'] || null,
         body,
         // D54: OPTIONS は送信に数えず、設計の誤りの検出用に印を付ける
@@ -38,7 +39,7 @@ function createReceiver({ name, defaultPort, corsAllowOrigin = null, respond }) 
       if (preflight) { res.writeHead(204); res.end(); return; } // CORS ヘッダなし = 事前確認は失敗させる
       const headers = { 'content-type': 'text/plain; charset=utf-8' };
       if (corsAllowOrigin && origin === corsAllowOrigin) headers['access-control-allow-origin'] = corsAllowOrigin;
-      const r = respond ? respond(req, body) : { status: 200, body: 'ok' };
+      const r = respond ? await respond(req, body) : { status: 200, body: 'ok' };
       res.writeHead(r.status, { ...headers, ...(r.headers || {}) });
       res.end(r.body);
     });

@@ -97,8 +97,42 @@ test('J 型: 加盟店サーバーに識別子が届いたら #3 不合格', () 
   const d = base(); d.receive.merchant.push({ method: 'POST', path: '/x', body: BODY });
   assert.ok(failedIds(evaluate({ cond: parseCondition('J-M-OX'), entered, identifier: ID, ...d })).includes('3'));
 });
-test('D・I・J 以外の型は未実装として例外（黙って合格にしない）', () => {
-  assert.throws(() => evaluate({ cond: parseCondition('A-M-OX'), entered, identifier: ID, ...base() }), /未実装/);
+// A 型: 正規宛先は加盟店の /pay-api。PSP への POST は加盟店サーバーから出る（CDP には出ない）
+const MERCHANT_BODY_REC = (o = {}) => ({ server: 'merchant', method: 'POST', path: '/pay-api', body: BODY, ...o });
+const baseA = () => ({
+  cdp: [{ method: 'GET', url: 'http://merchant.localhost:8080/checkout-a-m', frameUrl: null },
+    cdpPost('http://merchant.localhost:8080/pay-api', { frameUrl: 'http://merchant.localhost:8080/checkout-a-m' }), cdpPost('http://sinkhole.localhost:8082/c')],
+  receive: { merchant: [{ method: 'GET', path: '/checkout-a-m', body: '' }, MERCHANT_BODY_REC()],
+    psp: [rec('psp', { path: '/pay', userAgent: 'merchant-server' })], sinkhole: [rec('sinkhole', { path: '/c' })] },
+});
+const runA = (kind, mut) => { const d = baseA(); if (mut) mut(d); return evaluate({ cond: parseCondition(`A-${kind}-OX`), entered, identifier: ID, ...d }); };
+test('A-M-OX の正常な記録は全て合格', () => { const r = runA('M'); assert.equal(r.valid, true); assert.deepEqual(failedIds(r), []); });
+test('A-N-OX: sinkhole が空なら合格', () => {
+  const r = runA('N', (d) => { d.receive.sinkhole = []; d.cdp = d.cdp.filter((c) => !c.url.includes('sinkhole')); });
+  assert.equal(r.valid, true);
+});
+test('A 型 #1: 加盟店サーバーに識別子が届かなければ不合格（陽性対照）', () => {
+  const r = runA('M', (d) => { d.receive.merchant = d.receive.merchant.filter((x) => x.method === 'GET'); });
+  assert.ok(failedIds(r).includes('1')); assert.ok(failedIds(r).includes('3'));
+});
+test('A 型 #3: ブラウザから PSP へ直接 POST が出ていたら不合格（図5の誤読の場合の経路）', () => {
+  const r = runA('M', (d) => { d.cdp.push(cdpPost('http://psp.localhost:8081/pay')); });
+  assert.ok(failedIds(r).includes('3'));
+});
+test('A 型 #3: PSP の受信が加盟店サーバー発でなければ不合格', () => {
+  const r = runA('M', (d) => { d.receive.psp[0].userAgent = 'Mozilla/5.0'; });
+  assert.ok(failedIds(r).includes('3'));
+});
+test('A 型 #3: PSP に届いていなければ不合格（A3 が成立していない）', () => {
+  const r = runA('M', (d) => { d.receive.psp = []; });
+  assert.ok(failedIds(r).includes('3'));
+});
+test('A 型 #2: 宛先が PSP なら不合格（正規宛先は加盟店）', () => {
+  const r = runA('M', (d) => { d.cdp[1].url = 'http://psp.localhost:8081/pay'; });
+  assert.ok(failedIds(r).includes('2'));
+});
+test('R 型は未実装として例外（黙って合格にしない）', () => {
+  assert.throws(() => evaluate({ cond: parseCondition('R-N-OX'), entered, identifier: ID, ...base() }), /未実装/);
 });
 
 test('条件IDの解析: R-M-* と不正な書式は拒否', () => {

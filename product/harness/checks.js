@@ -1,7 +1,7 @@
 'use strict';
 // 毎試行の自動チェック #1〜#5（experiment_spec.md §6.2）と、受信ログ・CDP の突き合わせ（D24、§6.5 T2）。
 // 純粋関数。入力は記録（配列）だけで、ブラウザやサーバーには触れない。
-// 実装済みの型は D、I、J（D56 の順序）。他の型は例外にする（黙って合格にしない）。
+// 実装済みの型は D、I、J、A（D56 の順序）。他の型は例外にする（黙って合格にしない）。
 const PUBLIC_TEST_PANS = new Set([ // 公開テスト番号（私が選んだ一覧。NOTES_assumptions.md #23）
   '4242424242424242', '4000056655665556', '5555555555554444', '2223003122003222',
   '378282246310005', '6011111111111117', '4111111111111111',
@@ -14,7 +14,9 @@ const LEGIT = {
   D: { url: ORIGINS.psp + '/pay', senderOrigin: ORIGINS.merchant },
   I: { url: ORIGINS.psp + '/pay', senderOrigin: ORIGINS.psp },
   J: { url: ORIGINS.psp + '/pay', senderOrigin: ORIGINS.merchant }, // PSP の JS は加盟店ページ内で動くので、発信元は加盟店
+  A: { url: ORIGINS.merchant + '/pay-api', senderOrigin: ORIGINS.merchant }, // A2: ブラウザ → 加盟店サーバー（正規宛先は加盟店。D17）
 };
+const MERCHANT_SERVER_UA = 'merchant-server'; // A3: 加盟店サーバーが PSP へ送るときの User-Agent（merchant/server.js。NOTES #38）
 
 const fields = (body) => Object.fromEntries(new URLSearchParams(body || ''));
 function sameAsEntered(rec, entered) {
@@ -34,10 +36,12 @@ function evaluate({ cond, entered, identifier, receive, cdp }) {
 
   const cdpPosts = cdp.filter((r) => r.method === 'POST' && isHttp(r.url));
 
-  // #1 正規送信の受け手: PSP の受信ログに識別子が1件届き、内容が入力した全項目（CVC を含む）と一致する
-  const pspWithId = receive.psp.filter((r) => (r.body || '').includes(identifier));
-  add(1, '正規送信の受け手', pspWithId.length === 1 && sameAsEntered(pspWithId[0], entered),
-    `PSP の識別子つき受信 ${pspWithId.length} 件、内容一致=${pspWithId.length === 1 ? sameAsEntered(pspWithId[0], entered) : '-'}`);
+  // #1 正規送信の受け手: D・I・J・R は PSP、A は加盟店サーバーの受信ログに識別子が1件届き、内容が入力した全項目（CVC を含む）と一致する
+  const isA = cond.type === 'A';
+  const recvName = isA ? 'merchant' : 'psp';
+  const withIdAt = receive[recvName].filter((r) => (r.body || '').includes(identifier));
+  add(1, '正規送信の受け手', withIdAt.length === 1 && sameAsEntered(withIdAt[0], entered),
+    `${recvName} の識別子つき受信 ${withIdAt.length} 件、内容一致=${withIdAt.length === 1 ? sameAsEntered(withIdAt[0], entered) : '-'}`);
 
   // #2 正規宛先と発信元: CDP の POST のうち、sinkhole 以外はちょうど1件で、正規宛先、発信元フレームが加盟店
   const nonSink = cdpPosts.filter((r) => originOf(r.url) !== ORIGINS.sinkhole);
@@ -46,9 +50,18 @@ function evaluate({ cond, entered, identifier, receive, cdp }) {
   add(2, '正規宛先と発信元', !!one && one.url === legit.url && sender === legit.senderOrigin,
     `sinkhole 以外の CDP の POST ${nonSink.length} 件${one ? `、宛先=${one.url}、発信元=${sender}` : ''}`);
 
-  // #3 加盟店サーバーの受信: D・I・J型は識別子が届かない（D3、I5、J3）
+  // #3 加盟店サーバーの受信: D・I・J型は識別子が届かない（D3、I5、J3）。
+  // A型は、加盟店に識別子が届き（A2。陽性対照）、PSP の受信が加盟店サーバー発（A3）で、ブラウザからの PSP 宛て POST が CDP にない
   const merchantWithId = receive.merchant.filter((r) => JSON.stringify(r).includes(identifier));
-  add(3, '加盟店サーバーの受信', merchantWithId.length === 0, `加盟店の識別子つき受信 ${merchantWithId.length} 件`);
+  if (!isA) {
+    add(3, '加盟店サーバーの受信', merchantWithId.length === 0, `加盟店の識別子つき受信 ${merchantWithId.length} 件`);
+  } else {
+    const pspWithIdA = receive.psp.filter((r) => (r.body || '').includes(identifier));
+    const fromMerchant = pspWithIdA.length === 1 && pspWithIdA[0].userAgent === MERCHANT_SERVER_UA && !pspWithIdA[0].origin && !pspWithIdA[0].referer && sameAsEntered(pspWithIdA[0], entered);
+    const browserToPsp = cdpPosts.filter((r) => originOf(r.url) === ORIGINS.psp).length;
+    add(3, '加盟店サーバーの受信（API型）', merchantWithId.length >= 1 && fromMerchant && browserToPsp === 0,
+      `加盟店の識別子つき受信 ${merchantWithId.length} 件、PSP の識別子つき受信 ${pspWithIdA.length} 件（加盟店サーバー発・内容一致=${fromMerchant}）、CDP の PSP 宛て POST ${browserToPsp} 件`);
+  }
 
   // #4 悪性送信: M は sinkhole に識別子が届き、内容が全項目一致。N は sinkhole の受信ログが空
   if (cond.kind === 'M') {
@@ -76,6 +89,8 @@ function evaluate({ cond, entered, identifier, receive, cdp }) {
   for (const name of ['psp', 'sinkhole', 'merchant']) {
     const c = cdpPosts.filter((r) => originOf(r.url) === ORIGINS[name]);
     const s = receive[name].filter((r) => r.method === 'POST');
+    // A型の PSP 宛ては加盟店サーバーから出る（ブラウザの外。外縁③）ので、CDP には出ない。件数は #3 で確認する
+    if (isA && name === 'psp') { if (c.length !== 0) xc.push(`psp: ブラウザからの POST が CDP に ${c.length} 件`); continue; }
     if (c.length !== s.length) xc.push(`${name}: POST 件数 CDP=${c.length} 受信=${s.length}`);
     c.forEach((r) => { bodyTotal++; if (r.postData !== null) bodyAvail++; });
     const sBodies = s.map((r) => r.body).sort();
