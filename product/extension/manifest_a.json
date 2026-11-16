@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "observer-a",
+  "version": "0.0.1",
+  "description": "観測点A: ページ内で fetch を横取りして記録する（MAIN world、all_frames=true。D9、D42）",
+  "permissions": ["storage"],
+  "content_scripts": [
+    { "matches": ["http://*.localhost/*"], "js": ["main_a.js"], "world": "MAIN", "run_at": "document_start", "all_frames": true },
+    { "matches": ["http://*.localhost/*"], "js": ["judge.js", "relay_a.js"], "run_at": "document_start", "all_frames": true }
+  ]
+}

@@ -110,4 +110,4 @@ function evaluate({ cond, entered, identifier, receive, cdp }) {
   };
 }
 
-module.exports = { evaluate, PUBLIC_TEST_PANS, ORIGINS };
+module.exports = { evaluate, PUBLIC_TEST_PANS, ORIGINS, LEGIT };
