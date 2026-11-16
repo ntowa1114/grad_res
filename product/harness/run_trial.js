@@ -1,7 +1,7 @@
 'use strict';
 // 1試行の実行（experiment_spec.md §1.3、§5、§6.2、§7.1）。実装済みの型は D、I、J、A、R（D56 の順序）。
 // 使い方: node harness/run_trial.js <条件ID> [--out <出力先>]   （出力先の既定はリポジトリ直下の expt_log/）
-// 観測点 OX（拡張機能なし）、OA（案A）に対応。OB（案B）は段階2。拡張機能の読み込みは harness/extension.js。
+// 観測点 OX（拡張機能なし）、OA（案A）、OB（案B）に対応。拡張機能の読み込みは harness/extension.js。
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
@@ -77,10 +77,10 @@ const CUSTOMER = {
   },
 };
 
-async function runTrial(conditionId, { outRoot = path.join(REPO_ROOT, 'expt_log') } = {}) {
+// stopSw: 試行の後、読み出しの前に Service Worker を止める確認用（D52 の【未確認】。通常の試行では使わない）
+async function runTrial(conditionId, { outRoot = path.join(REPO_ROOT, 'expt_log'), stopSw = false } = {}) {
   const cond = parseCondition(conditionId);
   if (!CUSTOMER[cond.type]) throw new Error(`型 ${cond.type} は未実装`);
-  if (!['OX', 'OA'].includes(cond.point)) throw new Error('観測点 OB は案Bの実装後に対応する（今は OX・OA）');
 
   const trial = nextTrialNumber(outRoot, conditionId);
   const runId = `${conditionId}-${String(trial).padStart(3, '0')}`;
@@ -115,6 +115,7 @@ async function runTrial(conditionId, { outRoot = path.join(REPO_ROOT, 'expt_log'
     await CUSTOMER[cond.type](page, cond, entered, cdp);
     await page.waitForTimeout(SETTLE_MS);
     await cdp.drain();
+    if (extInfo && stopSw) meta.stopSw = await ext.stopServiceWorker(context, page, extInfo.id);
     if (extInfo) extRecords = await ext.readout(context, extInfo.id); // 試行後に読み出して extension.jsonl に書く（D52）
   } catch (e) {
     error = e;
@@ -153,7 +154,7 @@ if (require.main === module) {
   const args = process.argv.slice(2);
   const oi = args.indexOf('--out');
   const outRoot = oi >= 0 ? path.resolve(args[oi + 1]) : undefined;
-  runTrial(args[0], outRoot ? { outRoot } : {}).then(({ dir, meta }) => {
+  runTrial(args[0], { ...(outRoot ? { outRoot } : {}), stopSw: args.includes('--stop-sw') }).then(({ dir, meta }) => {
     console.log(`${meta.runId}: ${meta.valid ? '有効' : '無効'}  (${dir})`);
     meta.checks.forEach((c) => console.log(`  #${c.id} ${c.ok ? '合格' : '不合格'} ${c.name} — ${c.detail}`));
     if (meta.t1) {

@@ -57,8 +57,19 @@ async function readout(context, id) {
   return Object.keys(all).filter((k) => k.startsWith('rec:')).sort().map((k) => all[k]);
 }
 
+// 確認用: 拡張機能の Service Worker の target を CDP で閉じる（D52 の【未確認】。MV3 の自然な停止と同じ状態かは未確認。NOTES #8）。
+// 閉じる前後の target の数を返す
+async function stopServiceWorker(context, page, id) {
+  const cdp = await context.newCDPSession(page);
+  const swTargets = async () => (await cdp.send('Target.getTargets')).targetInfos.filter((t) => t.type === 'service_worker' && t.url.includes(id));
+  const before = await swTargets();
+  for (const t of before) await cdp.send('Target.closeTarget', { targetId: t.targetId });
+  await new Promise((r) => setTimeout(r, 1500));
+  return { before: before.length, after: (await swTargets()).length };
+}
+
 function launchArgs(dir) {
   return [`--disable-extensions-except=${dir}`, `--load-extension=${dir}`];
 }
 
-module.exports = { prepare, idFromPath, configure, readout, launchArgs, FILES };
+module.exports = { prepare, idFromPath, configure, readout, stopServiceWorker, launchArgs, FILES };
