@@ -16,7 +16,6 @@
 | E-13 | [X] の問題。sheet2 の 9 行目以降が `System.Xml.XmlElement` や `#REF!`、sheet1 の G 列が `...` で埋まっている。Bower のタイトルが「dentifying」、RiskIQ の著者名が「iskIQ」と欠けている | [X] | 文献リストの整理 |
 | E-14 | 重複: L4の結論と案A/案Bの比較が [P]・[S]・[H] に重複 | [P], [S], [H] | 正本は [P]（実験）と [H]（方針）。本ディレクトリは要約と参照のみ |
 | E-15 | RiskIQ 報告書の「7グループ」の言い方。[S P23] は「RiskIQ の7グループ」「スキマーを7つの項目にグループ分け」とし、分類要素として送信手段・決済画面の識別・データ収集・難読化/対解析を挙げる。[RQ] は「少なくとも7グループ」と総称するが、詳述は6グループ（Group 1 と 2 は統合）で、分類基準は ①インフラ ②スキマー ③標的の取り方 の3カテゴリ | [S P23], [RQ p.2, p.4, p.7] | 発表資料の記述の修正要否。7グループという言い方の使い方 |
-| E-16 | API型の経路。[PCI §2.5.1〜2.5.2, p.17-18] の本文と手順は「ブラウザ → 加盟店サーバー → PSP」。p.18 の図5には、ブラウザから PSP へ「Card data submitted to Payment Solution Provider」の矢印があるように見える | [PCI p.17-18] | 本文と手順に従う（`experiment_spec.md` §3 の A2・A3）。図の読み取りの確認は未了 |
 
 ## 2. 資料から判断できない事項（【未確認】）
 
@@ -36,7 +35,9 @@
 |---|---|
 | U-10 | MV3 の Service Worker 揮発への対処（永続保存）の実装記録 |
 | U-11 | 実Stripe 実測の生ログの所在 |
-| U-12 | PoC コード（`https://github.com/ntowa1114/pocv1`）の内容。本リポジトリにない。PoC は実施済みの事実として扱い、本実験の実装の前提にはしない（`product/` は空） |
+| U-12 | PoC コード（`https://github.com/ntowa1114/pocv1`）の内容。本リポジトリにない。PoC は実施済みの事実として扱い、本実験の実装の前提にはしない |
+| U-26 | URLリダイレクト型の「redirect command」の実装方法。[PCI §2.1.2 手順1、図1] は「加盟店サイトがリダイレクトの命令をブラウザへ送る」と書くが、HTTP 302 か、JS・メタタグかは書かない。実装は 302（実装者の解釈。`product/NOTES_assumptions.md` #42）。302 以外の方式で結果が変わるかは測っていない |
+| U-27 | API型の A3（加盟店サーバー → PSP）の送信形式。[PCI p.18] は形式を書かない。実装は `application/x-www-form-urlencoded`（実装者の選択。`product/NOTES_assumptions.md` #38）。また、PSP の受信ログで「加盟店サーバー発」と区別する根拠は User-Agent の文字列だけ（`product/NOTES_assumptions.md` #39） |
 
 **文献・事実**
 
