@@ -2,6 +2,7 @@
 // 加盟店 merchant.localhost:8080。
 // ダイレクトポスト型（D。D1〜D3）:  /checkout（正規）  /checkout-m（悪性。スキマー model_x.js を埋め込む）
 // iFrame 型（I。I1、I2）:           /checkout-i（正規）  /checkout-i-m（悪性。スキマー model_y.js を埋め込む）
+// R 型（R1〜R4）:                   /checkout-r（購入ページ。入力欄なし）→ /redirect-r（302）→ PSP の /checkout
 // A 型（A1〜A3）:                   /checkout-a（正規）  /checkout-a-m（悪性。model_x.js）。送信先は加盟店の /pay-api（PSP へ中継）
 //   J 型（J1〜J3）:                   /checkout-j（正規）  /checkout-j-m（悪性。model_x.js）。入力欄は PSP の psp.js が作る
 //   I 型の加盟店ページに決済機能はなく、PSP の iFrame だけを置く。
@@ -80,6 +81,18 @@ function forwardToPsp(body) {
   });
 }
 
+// R 型（R1〜R4）: /checkout-r は購入ページ（カード入力欄なし。R2）。ボタンで /redirect-r へ行き、加盟店が 302 で PSP の
+// /checkout へ誘導する（PCI §2.1.2 手順1「redirect command」。302 とする点は私の解釈。NOTES #42）。悪性ページは作らない（D16）
+function redirectPage() {
+  return `<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><title>checkout</title></head>
+<body>
+<p>cart: 1 item</p>
+<form id="go" action="/redirect-r" method="get"><button id="pay" type="submit">pay</button></form>
+</body></html>
+`;
+}
+
 const STATIC = { '/skimmer/send.js': 'send.js', '/skimmer/model_x.js': 'model_x.js', '/skimmer/model_y.js': 'model_y.js' };
 
 module.exports = createReceiver({
@@ -95,6 +108,8 @@ module.exports = createReceiver({
     if (req.method === 'GET' && url === '/checkout-j-m') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: jsFormPage(true) };
     if (req.method === 'GET' && url === '/checkout-a') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: apiPage(false) };
     if (req.method === 'GET' && url === '/checkout-a-m') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: apiPage(true) };
+    if (req.method === 'GET' && url === '/checkout-r') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: redirectPage() };
+    if (req.method === 'GET' && url === '/redirect-r') return { status: 302, headers: { location: 'http://psp.localhost:8081/checkout' }, body: '' };
     if (req.method === 'POST' && url === '/pay-api') {
       try { return { status: await forwardToPsp(body), body: 'ok' }; } catch (e) { return { status: 502, body: 'psp unreachable' }; }
     }

@@ -1,7 +1,7 @@
 'use strict';
 // 毎試行の自動チェック #1〜#5（experiment_spec.md §6.2）と、受信ログ・CDP の突き合わせ（D24、§6.5 T2）。
 // 純粋関数。入力は記録（配列）だけで、ブラウザやサーバーには触れない。
-// 実装済みの型は D、I、J、A（D56 の順序）。他の型は例外にする（黙って合格にしない）。
+// 実装済みの型は D、I、J、A、R（D56 の順序。全5型）。未知の型は例外にする（黙って合格にしない）。
 const PUBLIC_TEST_PANS = new Set([ // 公開テスト番号（私が選んだ一覧。NOTES_assumptions.md #23）
   '4242424242424242', '4000056655665556', '5555555555554444', '2223003122003222',
   '378282246310005', '6011111111111117', '4111111111111111',
@@ -14,6 +14,7 @@ const LEGIT = {
   D: { url: ORIGINS.psp + '/pay', senderOrigin: ORIGINS.merchant },
   I: { url: ORIGINS.psp + '/pay', senderOrigin: ORIGINS.psp },
   J: { url: ORIGINS.psp + '/pay', senderOrigin: ORIGINS.merchant }, // PSP の JS は加盟店ページ内で動くので、発信元は加盟店
+  R: { url: ORIGINS.psp + '/pay', senderOrigin: ORIGINS.psp }, // PSP のページ（リダイレクト後）から PSP へ。R3。悪性は作らない（D16）
   A: { url: ORIGINS.merchant + '/pay-api', senderOrigin: ORIGINS.merchant }, // A2: ブラウザ → 加盟店サーバー（正規宛先は加盟店。D17）
 };
 const MERCHANT_SERVER_UA = 'merchant-server'; // A3: 加盟店サーバーが PSP へ送るときの User-Agent（merchant/server.js。NOTES #38）

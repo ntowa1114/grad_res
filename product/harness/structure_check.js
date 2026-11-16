@@ -1,6 +1,6 @@
 'use strict';
 // 構造チェックとビルド時の確認（experiment_spec.md §6.4）。EC と検体の実装が終わった時点で、型ごとに1回行う。
-// コードを変えたら再実施する。対象: D型（D1、D2）、A型（A1）、I型（I1、I2、I3、S3）、J型（J1、J2）、検体（S4）。結果は標準出力に出す
+// コードを変えたら再実施する。対象: D型（D1、D2）、A型（A1）、R型（R1、R2）、I型（I1、I2、I3、S3）、J型（J1、J2）、検体（S4）。結果は標準出力に出す
 // （保存場所は仕様にない。NOTES_assumptions.md に実施結果を記録する）。使い方: node harness/structure_check.js
 const fs = require('node:fs');
 const os = require('node:os');
@@ -39,6 +39,27 @@ const readJsonl = (f) => fs.existsSync(f) ? fs.readFileSync(f, 'utf8').split('\n
     const aInfo = await page.evaluate(() => ({ inputs: ['cardnumber', 'exp', 'cvc', 'name'].every((n) => !!document.getElementById(n)), iframes: document.querySelectorAll('iframe').length, script: document.querySelector('script:not([src])').textContent.includes('/pay-api') }));
     const aGets = readJsonl(path.join(dir, 'receive_merchant.jsonl')).filter((r) => r.method === 'GET' && r.path === '/checkout-a');
     add('A1', 'A型: 決済ページとフォームが加盟店サーバーから配られる（送信先は加盟店の /pay-api）', aGets.length === 1 && aInfo.inputs && aInfo.iframes === 0 && aInfo.script, `加盟店の GET /checkout-a ${aGets.length} 件、最上位の DOM に4欄=${aInfo.inputs}、iframe=${aInfo.iframes}、送信先が /pay-api=${aInfo.script}`);
+
+    // R1: CDP のナビゲーション記録で、オリジンが加盟店 → PSP に変わる（加盟店の 302 → PSP の /checkout）。
+    // R2: 遷移前の加盟店ページに入力欄がなく、遷移後の PSP のページにある
+    const pr = await ctx.newPage();
+    const rCdp = path.join(dir, 'cdp_r.jsonl');
+    const rRec = createCdpRecorder(ctx, pr, rCdp);
+    await rRec.start();
+    await pr.goto(M + '/checkout-r');
+    const rBefore = await pr.evaluate(() => document.querySelectorAll('input:not([type=submit])').length);
+    await Promise.all([pr.waitForURL('http://psp.localhost:8081/checkout'), pr.click('#pay')]);
+    await pr.waitForSelector('#card-form');
+    const rAfter = await pr.evaluate(() => ['cardnumber', 'exp', 'cvc', 'name'].every((n) => !!document.getElementById(n)));
+    await rRec.drain();
+    const rDocs = readJsonl(rCdp).filter((r) => r.method === 'GET' && r.type === 'Document');
+    const rPsp = rDocs.find((r) => r.url === 'http://psp.localhost:8081/checkout');
+    const isRedirectR = (u) => { try { const x = new URL(u); return x.origin === M && x.pathname === '/redirect-r'; } catch { return false; } }; // GET フォームは末尾に ? を付けるので、パス名で比べる
+    const rMerchant = rDocs.find((r) => isRedirectR(r.url));
+    add('R1', 'R型: CDP のナビゲーション記録で、オリジンが加盟店 → PSP に変わる（加盟店の 302 → PSP の /checkout）',
+      !!rMerchant && !!rPsp && rPsp.redirectFrom && isRedirectR(rPsp.redirectFrom.url) && rPsp.redirectFrom.status === 302 && new URL(pr.url()).origin === 'http://psp.localhost:8081',
+      `加盟店の GET /redirect-r ${rMerchant ? 1 : 0} 件、PSP の GET /checkout ${rPsp ? 1 : 0} 件、遷移元=${rPsp && rPsp.redirectFrom ? rPsp.redirectFrom.url + ' ' + rPsp.redirectFrom.status : 'なし'}、最終 URL=${pr.url()}`);
+    add('R2', 'R型: 遷移前の加盟店ページに入力欄がなく、PSP のページにある', rBefore === 0 && rAfter, `遷移前の加盟店ページの input=${rBefore}、遷移後の PSP のページに4欄=${rAfter}`);
 
     // I1: iFrame の src のオリジンが PSP。I2: 入力欄は iFrame の中にだけあり、加盟店ページ本体にはない。I3: SOP
     await page.goto(M + '/checkout-i');

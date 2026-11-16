@@ -1,5 +1,5 @@
 'use strict';
-// 1試行の実行（experiment_spec.md §1.3、§5、§6.2、§7.1）。実装済みの型は D、I、J、A（D56 の順序）。
+// 1試行の実行（experiment_spec.md §1.3、§5、§6.2、§7.1）。実装済みの型は D、I、J、A、R（D56 の順序）。
 // 使い方: node harness/run_trial.js <条件ID> [--out <出力先>]   （出力先の既定はリポジトリ直下の expt_log/）
 // 観測点 OX（拡張機能なし）だけ対応。OA・OB（拡張機能の読み込み）は拡張機能の実装後（段階6以降）。
 const fs = require('node:fs');
@@ -53,6 +53,15 @@ const CUSTOMER = {
   // A型: 加盟店ページのフォームに入力して送信する。送信先は加盟店サーバー（A1〜A3）。操作は D型と同じ
   async A(page, cond, entered) {
     await page.goto('http://merchant.localhost:8080' + (cond.kind === 'M' ? '/checkout-a-m' : '/checkout-a'));
+    for (const k of FIELDS) await page.fill('#' + k, entered[k]);
+    await page.click('#pay');
+    await page.waitForFunction(() => document.getElementById('result').textContent !== '', null, { timeout: 10000 });
+  },
+  // R型: 加盟店の購入ページでボタンを押し、加盟店の 302 で PSP のページへ移り、そこで入力して送信する（R1〜R3）
+  async R(page, cond, entered) {
+    await page.goto('http://merchant.localhost:8080/checkout-r');
+    await Promise.all([page.waitForURL('http://psp.localhost:8081/checkout', { timeout: 10000 }), page.click('#pay')]);
+    await page.waitForSelector('#card-form', { timeout: 10000 });
     for (const k of FIELDS) await page.fill('#' + k, entered[k]);
     await page.click('#pay');
     await page.waitForFunction(() => document.getElementById('result').textContent !== '', null, { timeout: 10000 });

@@ -131,8 +131,29 @@ test('A 型 #2: 宛先が PSP なら不合格（正規宛先は加盟店）', ()
   const r = runA('M', (d) => { d.cdp[1].url = 'http://psp.localhost:8081/pay'; });
   assert.ok(failedIds(r).includes('2'));
 });
-test('R 型は未実装として例外（黙って合格にしない）', () => {
-  assert.throws(() => evaluate({ cond: parseCondition('R-N-OX'), entered, identifier: ID, ...base() }), /未実装/);
+// R 型: PSP のページ（リダイレクト後）から PSP へ。正規のみ（D16）
+const baseR = () => ({
+  cdp: [{ method: 'GET', url: 'http://merchant.localhost:8080/checkout-r', frameUrl: null },
+    { method: 'GET', url: 'http://psp.localhost:8081/checkout', frameUrl: null },
+    cdpPost('http://psp.localhost:8081/pay', { frameUrl: 'http://psp.localhost:8081/checkout' })],
+  receive: { merchant: [{ method: 'GET', path: '/checkout-r', body: '' }], psp: [rec('psp', { path: '/pay' })], sinkhole: [] },
+});
+const runR = (mut) => { const d = baseR(); if (mut) mut(d); return evaluate({ cond: parseCondition('R-N-OX'), entered, identifier: ID, ...d }); };
+test('R-N-OX の正常な記録は全て合格', () => { const r = runR(); assert.equal(r.valid, true); assert.deepEqual(failedIds(r), []); });
+test('R 型 #2: 発信元が加盟店ページなら不合格（R3 は PSP のページから）', () => {
+  const r = runR((d) => { d.cdp[2].frameUrl = 'http://merchant.localhost:8080/checkout-r'; });
+  assert.ok(failedIds(r).includes('2'));
+});
+test('R 型 #3: 加盟店サーバーに識別子が届いたら不合格（R4）', () => {
+  const r = runR((d) => { d.receive.merchant.push({ method: 'POST', path: '/x', body: BODY }); });
+  assert.ok(failedIds(r).includes('3'));
+});
+test('R 型 #4: sinkhole に受信があれば不合格・安全停止（S7）', () => {
+  const r = runR((d) => { d.receive.sinkhole.push(rec('sinkhole', { path: '/c' })); d.cdp.push(cdpPost('http://sinkhole.localhost:8082/c')); });
+  assert.ok(failedIds(r).includes('4')); assert.equal(r.safetyStop, true);
+});
+test('未知の型は例外（黙って合格にしない）', () => {
+  assert.throws(() => evaluate({ cond: { id: 'X-N-OX', type: 'X', kind: 'N', point: 'OX' }, entered, identifier: ID, ...base() }), /未実装/);
 });
 
 test('条件IDの解析: R-M-* と不正な書式は拒否', () => {

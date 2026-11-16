@@ -31,6 +31,7 @@ function createCdpRecorder(context, page, file) {
         write({
           t: new Date().toISOString(), label, requestId: e.requestId, method: req.method, url: req.url,
           frameId: e.frameId ?? null, frameUrl: frameUrls.get(e.frameId) ?? null,
+          redirectFrom: e.redirectResponse ? { url: e.redirectResponse.url, status: e.redirectResponse.status } : null, // リダイレクトの遷移元（R1）
           type: e.type ?? null, initiator: e.initiator?.type ?? null,
           origin: req.headers.Origin ?? null, referer: req.headers.Referer ?? null,
           hasPostData: !!req.hasPostData, postData, postDataSource,

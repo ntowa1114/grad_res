@@ -1,6 +1,7 @@
 'use strict';
 // ダミーPSP psp.localhost:8081（D54）。加盟店オリジンからの正規送信にだけ CORS を許可する。
 // /psp.js: J型の PSP の JS（J1〜J3）。
+// /checkout: R型のカード入力ページ（R1〜R3）。顧客のブラウザが加盟店からのリダイレクトで取得する。中身は /frame と同じフォーム（送信は同一オリジンの fetch で /pay へ。D49）。
 // /frame: I型の iFrame の中身（カード入力フォーム。I1、I2）。送信は同一オリジンの fetch で /pay へ（D49）。
 const { createReceiver } = require('../common/receiver');
 
@@ -58,6 +59,8 @@ const PSP_JS = `(function () {
 })();
 `;
 
+const CHECKOUT_PAGE = FRAME_PAGE.replace('<title>psp frame</title>', '<title>psp checkout</title>');
+
 module.exports = createReceiver({
   name: 'psp',
   defaultPort: 8081,
@@ -65,6 +68,9 @@ module.exports = createReceiver({
   respond(req) {
     if (req.method === 'GET' && req.url.split('?')[0] === '/frame') {
       return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: FRAME_PAGE };
+    }
+    if (req.method === 'GET' && req.url.split('?')[0] === '/checkout') {
+      return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: CHECKOUT_PAGE };
     }
     if (req.method === 'GET' && req.url.split('?')[0] === '/psp.js') {
       return { status: 200, headers: { 'content-type': 'text/javascript; charset=utf-8' }, body: PSP_JS };
