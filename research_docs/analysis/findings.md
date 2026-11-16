@@ -22,6 +22,7 @@
 | F12 | CDP は、同じ試行で、`fetch` の POST の本文（`application/x-www-form-urlencoded`）を全件（E6: 1/1、E7: 2/2）取れ、受信ログと一致した | 【観測】 | E6、E7 | WSL2 上の Playwright 同梱 Chromium 158、トップフレームの送信のみ、各1回。別オリジン iFrame・他の送信手段は未確認 |
 | F13 | 拡張機能なしで、iFrame 型の自作ECに埋め込んだスキマー（モデルY。iFrame を偽フォームに置換し、入力を sinkhole へ送ってから本物の iFrame を出し直す）の悪性送信が sinkhole に届いた。出し直した本物の iFrame への再入力による正規送信も、PSP に届いた。どちらにも入力欄の全項目（CVC を含む）が平文で入っていた。偽フォームへの入力の時点では、PSP の受信ログに識別子はなかった | 【観測】 | E9（`expt_log/I-M-OX/I-M-OX-001/`）、E8、構造チェックの S3（`product/NOTES_assumptions.md` #33） | 自作EC・自作スキマー・`fetch`・平文・公開テスト番号・各1回。S3 の確認は「出し直しの前」を厳密には切り出していない。実在のECでの成立ではない |
 | F14 | iFrame（別オリジン `psp.localhost`）内からの POST は、iFrame 用の CDP セッションにだけ現れ、親ページのセッションには現れなかった。そのセッションから、本文と発信元フレームの URL を取れ、受信ログと一致した（E8: 1/1、E9: 2/2） | 【観測】 | E8、E9、`product/NOTES_assumptions.md` #5、#31 | WSL2 上の Playwright 同梱 Chromium 158。各1回 |
+| F15 | 拡張機能なしで、JavaScriptフォーム型の自作ECに埋め込んだスキマー（モデルX。改造なし）が、PSP の JS（`psp.js`）が実行時に作った入力欄を読み、sinkhole へ全項目（CVC を含む）を平文で送れた。正規送信（加盟店ページのオリジンから PSP へ）も PSP に届いた。構造チェックの J1・J2 で、`psp.js` が PSP のオリジンから取得されること、元の HTML に入力欄がなく JS の実行後に DOM に現れることを確認した | 【観測】 | E11（`expt_log/J-M-OX/J-M-OX-001/`）、E10、構造チェックの J1・J2（`product/NOTES_assumptions.md` #35〜#37） | 自作EC・自作 `psp.js`・通常の DOM（Shadow DOM・iFrame なし。D31）・`fetch`・平文・公開テスト番号・各1回。実在のPSPの JS では未確認。実在のECでの成立ではない |
 
 ## 2. 卒論で主張できること（候補）と根拠の対応
 

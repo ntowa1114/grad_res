@@ -56,7 +56,7 @@
 ### 終わったこと
 - 実行環境: WSL2 + Playwright 同梱 Chromium 158（`channel: 'chromium'` 必須。#14）。`research_docs/experiment_spec.md` §11 に反映済み。
 - 部品: `common/receiver.js`、`psp/`（`/pay`、`/frame`）、`sinkhole/`、`merchant/`（D型 `/checkout`・`/checkout-m`、I型 `/checkout-i`・`/checkout-i-m`、J型 `/checkout-j`・`/checkout-j-m`）。`psp/` は `/pay`、`/frame`、`/psp.js`、`skimmer/`（`send.js` 共通、`model_x.js`＝D型、`model_y.js`＝I型）、`harness/`（`ids.js`、`cdp.js`、`checks.js`、`run_trial.js`、`structure_check.js`）。
-- 基準試行（`expt_log/`、各1回、全て有効）: `D-N-OX-001`、`D-M-OX-001`、`I-N-OX-001`、`I-M-OX-001`（E6〜E9、F11〜F14 として `research_docs/` に反映済み）、`J-N-OX-001`、`J-M-OX-001`（**`research_docs/` へは未反映**。`experiment_index.md` の E10・E11、`analysis/findings.md`、`open_issues.md` U-21 が更新待ち。`expt_log/` のコミットも未）。
+- 基準試行（`expt_log/`、各1回、全て有効）: `D-N-OX-001`、`D-M-OX-001`、`I-N-OX-001`、`I-M-OX-001`（E6〜E9、F11〜F14 として `research_docs/` に反映済み）、`J-N-OX-001`、`J-M-OX-001`（E10・E11、F15 として `research_docs/` に反映済み。U-21 の J 型の部分は解消済みで、残りは Group 5 の図と Group 4 以外の送信 API）。
 - テスト: `node --test test/harness.test.js test/receivers.test.js`（27件）。構造チェック: `node harness/structure_check.js`（D1、D2、I1〜I3、J1、J2、S3、S4）。1試行の実行: `node harness/run_trial.js <条件ID>`（例 `J-M-OX`。出力先の既定は `expt_log/`、`--out <dir>` で変更）。
 - コミット済み（`research-docs-d49-d56` ブランチ。コード最新 81682d4）。
 
