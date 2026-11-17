@@ -1,0 +1,164 @@
+{
+  "runId": "A-N-OB-004",
+  "conditionId": "A-N-OB",
+  "trial": 4,
+  "seed": 1106913818,
+  "identifier": "ID-A-N-OB-004-IT8W",
+  "entered": {
+    "cardnumber": "4242424242424242",
+    "exp": "12/30",
+    "cvc": "123",
+    "name": "ID-A-N-OB-004-IT8W"
+  },
+  "startedAt": "2026-11-17T04:23:03.968Z",
+  "browser": {
+    "name": "chromium",
+    "channel": "chromium",
+    "version": "158.0.8127.18",
+    "playwright": "1.65.0"
+  },
+  "endedAt": "2026-11-17T04:23:05.053Z",
+  "hashes": {
+    "extension": {
+      "point": "OB",
+      "files": {
+        "sw_b.js": "a70e8a444bab311dabf4545f1e763ba2ef64d4f265242a7b6b285d0b3d9fb935",
+        "judge.js": "217f6c8d32c0863d4dd07eb76eba6e67534bcefb05ff5bafa5af3bcb628f7484",
+        "reader.html": "cbf20438ae664e259c51f7f80ac8f6187638a28249c46c18274e7a23e53b9a3f",
+        "manifest_b.json": "2e6005860472900c259afa84d511be1c223cfdd4e9463ce152c96ebaea358002"
+      },
+      "combined": "073ad3922423201395e4febfb006f3a48304f1cc658129a3a0e85a19bbf64d9c",
+      "settings": {
+        "world": null,
+        "all_frames": null
+      }
+    },
+    "skimmer": null
+  },
+  "checks": [
+    {
+      "id": 1,
+      "name": "正規送信の受け手",
+      "ok": true,
+      "detail": "merchant の識別子つき受信 1 件、内容一致=true"
+    },
+    {
+      "id": 2,
+      "name": "正規宛先と発信元",
+      "ok": true,
+      "detail": "sinkhole 以外の CDP の POST 1 件、宛先=http://merchant.localhost:8080/pay-api、発信元=http://merchant.localhost:8080"
+    },
+    {
+      "id": 3,
+      "name": "加盟店サーバーの受信（API型）",
+      "ok": true,
+      "detail": "加盟店の識別子つき受信 1 件、PSP の識別子つき受信 1 件（加盟店サーバー発・内容一致=true）、CDP の PSP 宛て POST 0 件"
+    },
+    {
+      "id": 4,
+      "name": "悪性送信（正規では sinkhole が空）",
+      "ok": true,
+      "detail": "sinkhole の受信 0 件"
+    },
+    {
+      "id": 5,
+      "name": "隔離と番号",
+      "ok": true,
+      "detail": "CDP の記録 3 件、範囲外のホスト=[]、公開テスト番号=true"
+    },
+    {
+      "id": "P",
+      "name": "preflight なし（D54）",
+      "ok": true,
+      "detail": "OPTIONS 0 件"
+    },
+    {
+      "id": "T2",
+      "name": "受信ログと CDP の突き合わせ（D24）",
+      "ok": true,
+      "detail": "一致（CDP が本文を取れた POST 1/1）"
+    }
+  ],
+  "valid": true,
+  "invalidReasons": [],
+  "safetyStop": false,
+  "cdpBodyAvailable": {
+    "available": 1,
+    "total": 1
+  },
+  "t1": {
+    "perLevel": {
+      "L1": {
+        "match": 1,
+        "total": 1,
+        "falsePositives": 0
+      },
+      "L2": {
+        "match": 1,
+        "total": 1
+      },
+      "L3": {
+        "match": 1,
+        "total": 1
+      },
+      "L4": {
+        "match": 1,
+        "total": 1
+      },
+      "L4b": {
+        "match": 1,
+        "total": 1
+      }
+    },
+    "trialMatch": {
+      "L1": true,
+      "L2": true,
+      "L3": true,
+      "L4": true,
+      "L4b": true
+    },
+    "missed": 0,
+    "falsePositives": 0,
+    "contentErrors": 0,
+    "breakdown": {
+      "legit": {
+        "L4": {
+          "match": 1,
+          "total": 1
+        },
+        "L4b": {
+          "match": 1,
+          "total": 1
+        }
+      },
+      "malicious": {
+        "L4": {
+          "match": 0,
+          "total": 0
+        },
+        "L4b": {
+          "match": 0,
+          "total": 0
+        }
+      }
+    },
+    "outOfBrowser": [
+      {
+        "server": "psp",
+        "count": 1
+      }
+    ],
+    "perSend": [
+      {
+        "url": "http://merchant.localhost:8080/pay-api",
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": true,
+        "L4": true,
+        "L4b": true,
+        "legit": true
+      }
+    ]
+  }
+}
