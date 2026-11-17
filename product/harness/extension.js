@@ -15,17 +15,22 @@ const FILES = { // 観測点ごとに読み込むファイル（manifest は別�
 const MANIFEST = { OA: 'manifest_a.json', OB: 'manifest_b.json' };
 const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
 
+// 現在の拡張機能（観測点ごと）のファイルの SHA-256 と、全体のハッシュ。集計は、現在の版の試行だけを数える（コードを変えたら取り直す。§6.2【提案】）
+function currentHashes(point) {
+  if (!FILES[point]) throw new Error(`観測点 ${point} に拡張機能はない`);
+  const files = {};
+  for (const f of [...FILES[point], MANIFEST[point]]) files[f] = sha256(fs.readFileSync(path.join(SRC, f)));
+  const combined = sha256(Object.keys(files).sort().map((k) => `${k}:${files[k]}`).join('\n'));
+  return { point, files, combined, settings: { world: point === 'OA' ? 'MAIN' : null, all_frames: point === 'OA' ? true : null } };
+}
+
 // 一時フォルダへコピーし、{ dir, hashes } を返す。hashes は元のファイルの SHA-256（試行の meta.json に記録する。§7.1）
 function prepare(point) {
-  if (!FILES[point]) throw new Error(`観測点 ${point} に拡張機能はない`);
+  const hashes = currentHashes(point);
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `ext-${point}-`));
-  const files = {};
-  for (const f of FILES[point]) { const b = fs.readFileSync(path.join(SRC, f)); fs.writeFileSync(path.join(dir, f), b); files[f] = sha256(b); }
-  const m = fs.readFileSync(path.join(SRC, MANIFEST[point]));
-  fs.writeFileSync(path.join(dir, 'manifest.json'), m);
-  files[MANIFEST[point]] = sha256(m);
-  const combined = sha256(Object.keys(files).sort().map((k) => `${k}:${files[k]}`).join('\n'));
-  return { dir, hashes: { point, files, combined, settings: { world: point === 'OA' ? 'MAIN' : null, all_frames: point === 'OA' ? true : null } } };
+  for (const f of FILES[point]) fs.copyFileSync(path.join(SRC, f), path.join(dir, f));
+  fs.copyFileSync(path.join(SRC, MANIFEST[point]), path.join(dir, 'manifest.json'));
+  return { dir, hashes };
 }
 
 // 展開済み（unpacked）拡張機能の ID: フォルダのパスの SHA-256 の先頭16バイトを a〜p に写したもの（Chrome の既知の方式）。
@@ -72,4 +77,4 @@ function launchArgs(dir) {
   return [`--disable-extensions-except=${dir}`, `--load-extension=${dir}`];
 }
 
-module.exports = { prepare, idFromPath, configure, readout, stopServiceWorker, launchArgs, FILES };
+module.exports = { prepare, currentHashes, idFromPath, configure, readout, stopServiceWorker, launchArgs, FILES };

@@ -159,8 +159,8 @@ if (require.main === module) {
     meta.checks.forEach((c) => console.log(`  #${c.id} ${c.ok ? '合格' : '不合格'} ${c.name} — ${c.detail}`));
     if (meta.t1) {
       const x = meta.t1; const f = (k) => `${x.perLevel[k].match}/${x.perLevel[k].total}`;
-      console.log(`  T1 一致（送信単位）L1 ${f('L1')} L2 ${f('L2')} L3 ${f('L3')} L4 ${f('L4')}、見逃し ${x.missed}、誤検出 ${x.falsePositives}、内容の誤り ${x.contentErrors}、外縁③ ${JSON.stringify(x.outOfBrowser)}`);
-      console.log(`  T1 試行の欄（全ての送信で一致）L1 ${x.trialMatch.L1} L2 ${x.trialMatch.L2} L3 ${x.trialMatch.L3} L4 ${x.trialMatch.L4}`);
+      console.log(`  T1 一致（送信単位）L1 ${f('L1')} L2 ${f('L2')} L3 ${f('L3')} L4a ${f('L4')} L4b ${f('L4b')}、見逃し ${x.missed}、誤検出 ${x.falsePositives}、内容の誤り ${x.contentErrors}、外縁③ ${JSON.stringify(x.outOfBrowser)}`);
+      console.log(`  T1 試行の欄（全ての送信で一致）L1 ${x.trialMatch.L1} L2 ${x.trialMatch.L2} L3 ${x.trialMatch.L3} L4a ${x.trialMatch.L4} L4b ${x.trialMatch.L4b}`);
     }
     if (meta.invalidReasons?.length) console.log('  無効の理由:', meta.invalidReasons.join(' / '));
     if (meta.safetyStop) { console.log('  安全に関わる不合格。実験を止めて原因を確認する（§8）'); process.exitCode = 2; }

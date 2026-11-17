@@ -7,6 +7,7 @@ const path = require('node:path');
 const { runTrial } = require('./run_trial');
 const { conditions, hasDiscrepancy, BASE_REPS, EXTENDED_REPS } = require('./summarize');
 const fs = require('node:fs');
+const ext = require('./extension');
 
 const MAX_INVALID = 5; // 1条件で無効試行がこれに達したら止める（原因を調べる。無限に再実行しない）
 
@@ -14,8 +15,11 @@ function validTrials(root, cond) {
   const dir = path.join(root, cond);
   if (!fs.existsSync(dir)) return { valid: [], invalid: 0 };
   const metas = fs.readdirSync(dir).map((n) => path.join(dir, n, 'meta.json')).filter(fs.existsSync).map((f) => JSON.parse(fs.readFileSync(f, 'utf8')));
-  const valid = metas.filter((m) => m.valid && m.t1);
-  return { valid, invalid: metas.length - valid.length };
+  // 現在の拡張機能のハッシュの試行だけを数える（旧い版の試行は記録として残し、数えない）
+  const cur = ext.currentHashes(cond.split('-')[2]).combined;
+  const current = metas.filter((m) => m.hashes && m.hashes.extension && m.hashes.extension.combined === cur);
+  const valid = current.filter((m) => m.valid && m.t1);
+  return { valid, invalid: current.length - valid.length };
 }
 
 async function runCondition(cond, outRoot) {

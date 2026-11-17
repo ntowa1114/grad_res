@@ -7,7 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { mark, hasDiscrepancy, summarizeCondition, conditions } = require('../harness/summarize');
 
-const trialMatch = (o = {}) => ({ L1: true, L2: true, L3: true, L4: true, ...o });
+const trialMatch = (o = {}) => ({ L1: true, L2: true, L3: true, L4: true, L4b: true, ...o });
 const meta = (n, o = {}) => ({ runId: `D-M-OA-${String(n).padStart(3, '0')}`, valid: true, cdpBodyAvailable: { available: 2, total: 2 },
   t1: { trialMatch: trialMatch(o.match), missed: 0, falsePositives: 0, contentErrors: 0, outOfBrowser: [] }, ...(o.top || {}) });
 function writeTrials(metas) {
@@ -33,15 +33,15 @@ test('食い違い: 全試行が同じでも、T1 で見逃しが1件でもあ�
 test('集計: 無効試行は数えず、一致数 / 有効試行数を出す', () => {
   const inv = meta(4); inv.valid = false;
   const root = writeTrials([meta(1), meta(2, { match: { L4: false } }), meta(3), inv]);
-  const s = summarizeCondition(root, 'D-M-OA');
+  const s = summarizeCondition(root, 'D-M-OA', { filter: false });
   assert.equal(s.valid, 3); assert.equal(s.invalid, 1);
   assert.deepEqual([s.levels.L1.match, s.levels.L4.match, s.levels.L4.mark, s.levels.L1.mark], [3, 2, '△', '○']);
   assert.deepEqual(s.unclassified, ['L4']);
   assert.equal(s.complete, false); // 食い違いがあるので10回に達するまで未完
 });
 test('集計: 全試行が一致なら3回で完了。3回を超えたら「10回に増やした」', () => {
-  assert.equal(summarizeCondition(writeTrials([meta(1), meta(2), meta(3)]), 'D-M-OA').complete, true);
+  assert.equal(summarizeCondition(writeTrials([meta(1), meta(2), meta(3)]), 'D-M-OA', { filter: false }).complete, true);
   const ten = Array.from({ length: 10 }, (_, i) => meta(i + 1, i === 0 ? { match: { L3: false } } : {}));
-  const s = summarizeCondition(writeTrials(ten), 'D-M-OA');
+  const s = summarizeCondition(writeTrials(ten), 'D-M-OA', { filter: false });
   assert.equal(s.extended, true); assert.equal(s.complete, true); assert.equal(s.levels.L3.mark, '△');
 });
