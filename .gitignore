@@ -1,0 +1,2 @@
+# Stripe のキー（公開可能キーでも、リポジトリに入れない）
+product/stripe/local_key.txt
