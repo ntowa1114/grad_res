@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "observer-a-stripe",
+  "version": "0.0.1",
+  "description": "観測点A（実 Stripe 版）: 内容はダミー版と同じ。matches にだけ、Stripe の iFrame のホストを足した（D9、D42。NOTES の Stripe 版の記録を参照）",
+  "permissions": ["storage"],
+  "content_scripts": [
+    { "matches": ["http://*.localhost/*", "https://js.stripe.com/*", "https://m.stripe.network/*"], "js": ["main_a_stripe.js"], "world": "MAIN", "run_at": "document_start", "all_frames": true },
+    { "matches": ["http://*.localhost/*", "https://js.stripe.com/*", "https://m.stripe.network/*"], "js": ["judge.js", "relay_a.js"], "run_at": "document_start", "all_frames": true }
+  ]
+}
