@@ -1,0 +1,80 @@
+{
+  "runId": "TF-M-OX-001",
+  "conditionId": "TF-M-OX",
+  "trial": 1,
+  "seed": 3801807111,
+  "identifier": "ID-TF-M-OX-001-CJ2E",
+  "entered": {
+    "cardnumber": "4242424242424242",
+    "exp": "12/30",
+    "cvc": "123",
+    "name": "ID-TF-M-OX-001-CJ2E"
+  },
+  "startedAt": "2026-11-22T07:25:53.102Z",
+  "transport": "F",
+  "browser": {
+    "name": "chromium",
+    "channel": "chromium",
+    "version": "158.0.8127.18",
+    "playwright": "1.65.0"
+  },
+  "endedAt": "2026-11-22T07:25:53.978Z",
+  "hashes": {
+    "extension": null,
+    "skimmer": {
+      "send.js": "c0dacd49904ef283a02361fdae47530209d8dff11528caadfe96adb8c0b94970",
+      "model_x.js": "d1262988e8532a59495aaac9b331c35f3544a444ac3c74bb60ab329c8282760e"
+    }
+  },
+  "checks": [
+    {
+      "id": 1,
+      "name": "正規送信の受け手",
+      "ok": true,
+      "detail": "psp の識別子つき受信 1 件、内容一致=true"
+    },
+    {
+      "id": 2,
+      "name": "正規宛先と発信元",
+      "ok": true,
+      "detail": "sinkhole 以外の CDP の POST 1 件、宛先=http://psp.localhost:8081/pay、発信元=http://merchant.localhost:8080"
+    },
+    {
+      "id": 3,
+      "name": "加盟店サーバーの受信",
+      "ok": true,
+      "detail": "加盟店の識別子つき受信 0 件"
+    },
+    {
+      "id": 4,
+      "name": "悪性送信",
+      "ok": true,
+      "detail": "sinkhole の受信 1 件、うち識別子つき 1 件、全て内容一致=true（POST）"
+    },
+    {
+      "id": 5,
+      "name": "隔離と番号",
+      "ok": true,
+      "detail": "CDP の記録 6 件、範囲外のホスト=[]、公開テスト番号=true"
+    },
+    {
+      "id": "P",
+      "name": "preflight なし（D54）",
+      "ok": true,
+      "detail": "OPTIONS 0 件"
+    },
+    {
+      "id": "T2",
+      "name": "受信ログと CDP の突き合わせ（D24）",
+      "ok": true,
+      "detail": "一致（CDP が本文を取れた POST 2/2）"
+    }
+  ],
+  "valid": true,
+  "invalidReasons": [],
+  "safetyStop": false,
+  "cdpBodyAvailable": {
+    "available": 2,
+    "total": 2
+  }
+}

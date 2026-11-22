@@ -1,0 +1,177 @@
+{
+  "runId": "TB-M-OA-002",
+  "conditionId": "TB-M-OA",
+  "trial": 2,
+  "seed": 2577254329,
+  "identifier": "ID-TB-M-OA-002-3X3D",
+  "entered": {
+    "cardnumber": "4242424242424242",
+    "exp": "12/30",
+    "cvc": "123",
+    "name": "ID-TB-M-OA-002-3X3D"
+  },
+  "startedAt": "2026-11-22T07:30:08.354Z",
+  "transport": "B",
+  "extVariant": "OA_T",
+  "browser": {
+    "name": "chromium",
+    "channel": "chromium",
+    "version": "158.0.8127.18",
+    "playwright": "1.65.0"
+  },
+  "endedAt": "2026-11-22T07:30:09.292Z",
+  "hashes": {
+    "extension": {
+      "point": "OA_T",
+      "files": {
+        "main_a_t.js": "60be90cccccdeb0244a27e6987565c357c2e670daa014f330ac188f8114ca0b8",
+        "relay_a_t.js": "0ce808ac23a4ea46c3775c3c9ed37b10ac92f34049c4ffcbb94d4b51c6ea1d86",
+        "judge.js": "217f6c8d32c0863d4dd07eb76eba6e67534bcefb05ff5bafa5af3bcb628f7484",
+        "judge_t.js": "91b51972c3a852164869cef93e540857f70d0be0df77a97bda9062c152687fda",
+        "reader.html": "cbf20438ae664e259c51f7f80ac8f6187638a28249c46c18274e7a23e53b9a3f",
+        "manifest_a_t.json": "86ae6578ff5c2e59286466de741d02a27629f5dab0ae4f212c5bdcf2a32896fa"
+      },
+      "combined": "32352305776a774af765378cd7a0e414dc18d4d3736aafb8b95251c212fb95e4",
+      "settings": {
+        "world": "MAIN",
+        "all_frames": true,
+        "match_about_blank": true
+      }
+    },
+    "skimmer": {
+      "send.js": "c0dacd49904ef283a02361fdae47530209d8dff11528caadfe96adb8c0b94970",
+      "model_x.js": "d1262988e8532a59495aaac9b331c35f3544a444ac3c74bb60ab329c8282760e"
+    }
+  },
+  "checks": [
+    {
+      "id": 1,
+      "name": "正規送信の受け手",
+      "ok": true,
+      "detail": "psp の識別子つき受信 1 件、内容一致=true"
+    },
+    {
+      "id": 2,
+      "name": "正規宛先と発信元",
+      "ok": true,
+      "detail": "sinkhole 以外の CDP の POST 1 件、宛先=http://psp.localhost:8081/pay、発信元=http://merchant.localhost:8080"
+    },
+    {
+      "id": 3,
+      "name": "加盟店サーバーの受信",
+      "ok": true,
+      "detail": "加盟店の識別子つき受信 0 件"
+    },
+    {
+      "id": 4,
+      "name": "悪性送信",
+      "ok": true,
+      "detail": "sinkhole の受信 1 件、うち識別子つき 1 件、全て内容一致=true（POST）"
+    },
+    {
+      "id": 5,
+      "name": "隔離と番号",
+      "ok": true,
+      "detail": "CDP の記録 6 件、範囲外のホスト=[]、公開テスト番号=true"
+    },
+    {
+      "id": "P",
+      "name": "preflight なし（D54）",
+      "ok": true,
+      "detail": "OPTIONS 0 件"
+    },
+    {
+      "id": "T2",
+      "name": "受信ログと CDP の突き合わせ（D24）",
+      "ok": true,
+      "detail": "一致（CDP が本文を取れた POST 2/2）"
+    }
+  ],
+  "valid": true,
+  "invalidReasons": [],
+  "safetyStop": false,
+  "cdpBodyAvailable": {
+    "available": 2,
+    "total": 2
+  },
+  "t1": {
+    "perLevel": {
+      "L1": {
+        "match": 2,
+        "total": 2,
+        "falsePositives": 0
+      },
+      "L2": {
+        "match": 2,
+        "total": 2
+      },
+      "L3": {
+        "match": 2,
+        "total": 2
+      },
+      "L4": {
+        "match": 2,
+        "total": 2
+      },
+      "L4b": {
+        "match": 1,
+        "total": 2
+      }
+    },
+    "trialMatch": {
+      "L1": true,
+      "L2": true,
+      "L3": true,
+      "L4": true,
+      "L4b": false
+    },
+    "missed": 0,
+    "falsePositives": 0,
+    "contentErrors": 0,
+    "breakdown": {
+      "legit": {
+        "L4": {
+          "match": 1,
+          "total": 1
+        },
+        "L4b": {
+          "match": 0,
+          "total": 1
+        }
+      },
+      "malicious": {
+        "L4": {
+          "match": 1,
+          "total": 1
+        },
+        "L4b": {
+          "match": 1,
+          "total": 1
+        }
+      }
+    },
+    "outOfBrowser": [],
+    "perSend": [
+      {
+        "url": "http://sinkhole.localhost:8082/c",
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": true,
+        "L4": true,
+        "L4b": true,
+        "legit": false
+      },
+      {
+        "url": "http://psp.localhost:8081/pay",
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": true,
+        "L4": true,
+        "L4b": false,
+        "legit": true
+      }
+    ]
+  }
+}
