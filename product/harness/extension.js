@@ -13,6 +13,17 @@ const FILES = { // 観測点ごとに読み込むファイル（manifest は別�
   OB: ['sw_b.js', 'judge.js', 'reader.html'],
 };
 const MANIFEST = { OA: 'manifest_a.json', OB: 'manifest_b.json' };
+// 追加実験（D57）の版。本実験の版（OA・OB）のファイルは変えず、別のファイルで作る（本実験のハッシュを変えないため）。
+// OA_T = 強化版の案A（fetch・sendBeacon・画像・form を横取り）、OB_T = 案B 段階2（画像GET も記録）。案B 段階1は OB（現行）のまま
+FILES.OA_T = ['main_a_t.js', 'relay_a_t.js', 'judge.js', 'judge_t.js', 'reader.html'];
+FILES.OB_T = ['sw_b_t.js', 'judge.js', 'judge_t.js', 'reader.html'];
+MANIFEST.OA_T = 'manifest_a_t.json';
+MANIFEST.OB_T = 'manifest_b_t.json';
+// 条件に使う拡張機能の版。追加実験（transport つき）の案A は強化版（OA_T）。案B は既定で現行（OB。段階1）、段階2 は override で OB_T
+function variantFor(cond, override) {
+  if (override) return override;
+  return cond.transport && cond.point === 'OA' ? 'OA_T' : cond.point;
+}
 const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
 
 // 現在の拡張機能（観測点ごと）のファイルの SHA-256 と、全体のハッシュ。集計は、現在の版の試行だけを数える（コードを変えたら取り直す。§6.2【提案】）
@@ -21,7 +32,7 @@ function currentHashes(point) {
   const files = {};
   for (const f of [...FILES[point], MANIFEST[point]]) files[f] = sha256(fs.readFileSync(path.join(SRC, f)));
   const combined = sha256(Object.keys(files).sort().map((k) => `${k}:${files[k]}`).join('\n'));
-  return { point, files, combined, settings: { world: point === 'OA' ? 'MAIN' : null, all_frames: point === 'OA' ? true : null } };
+  return { point, files, combined, settings: { world: point.startsWith('OA') ? 'MAIN' : null, all_frames: point.startsWith('OA') ? true : null, ...(point === 'OA_T' ? { match_about_blank: true } : {}) } };
 }
 
 // 一時フォルダへコピーし、{ dir, hashes } を返す。hashes は元のファイルの SHA-256（試行の meta.json に記録する。§7.1）
@@ -77,4 +88,4 @@ function launchArgs(dir) {
   return [`--disable-extensions-except=${dir}`, `--load-extension=${dir}`];
 }
 
-module.exports = { prepare, currentHashes, idFromPath, configure, readout, stopServiceWorker, launchArgs, FILES };
+module.exports = { variantFor, prepare, currentHashes, idFromPath, configure, readout, stopServiceWorker, launchArgs, FILES };

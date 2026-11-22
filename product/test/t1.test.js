@@ -78,3 +78,51 @@ test('L4b は正規宛先の設定（config）を使わない', () => {
   const rec = { url: PSP, method: 'POST', body: BODY, pageUrl: MPAGE };
   assert.equal(judge(rec, { legit: 'psp.localhost:8081' }).L4b, judge(rec, null).L4b);
 });
+
+// ---- 追加実験: 画像GET（条件 TG-*。D57）。sinkhole 宛ての GET を送信に数える ----
+test('T1 TG: sinkhole 宛ての GET を正解の送信に数え、拡張機能が記録していれば一致、なければ見逃し1件', () => {
+  const url = SINK + '?' + BODY;
+  const cdpGet = { method: 'GET', url, postData: null, type: 'Image' };
+  const recG = { url, method: 'GET', body: null, pageUrl: MPAGE, judge: { L1: true, L2: 'sinkhole.localhost:8082', L3: '4242424242424242', L4: 'deny', L4b: 'deny' } };
+  const runG = (ext) => t1({ cond: parseCondition('TG-M-OA'), entered, legitUrl: PSP, cdp: [cdpPost(PSP), cdpGet], receive: { psp: [], sinkhole: [{ method: 'GET', path: '/c?' + BODY }], merchant: [] }, ext });
+  const ok = runG([extRec(PSP, 'psp.localhost:8081'), recG]);
+  assert.equal(ok.perSend.length, 2); assert.equal(ok.missed, 0); assert.equal(ok.falsePositives, 0);
+  assert.deepEqual(ok.outOfBrowser, []);
+  assert.equal(ok.perSend.find((p) => p.url === url).observed, true);
+  const missed = runG([extRec(PSP, 'psp.localhost:8081')]); // 案A（弱い版）や案B（POST のみ）が GET を記録しない場合
+  assert.equal(missed.missed, 1); assert.equal(missed.trialMatch.L1, false);
+});
+test('T1: 従来の条件（transport なし）では、sinkhole 宛ての GET を送信に数えない', () => {
+  const cdpGet = { method: 'GET', url: SINK + '?' + BODY, postData: null };
+  const r = run('D', [cdpPost(PSP), cdpPost(SINK), cdpGet], [extRec(PSP, 'psp.localhost:8081'), extRec(SINK, 'psp.localhost:8081')]);
+  assert.equal(r.perSend.length, 2); assert.equal(r.missed, 0);
+});
+
+// ---- 追加実験（D57）: judge_t.js（GET 対応の判定）と、拡張機能の版の選択 ----
+test('judge_t: GET の記録は L1 = true、L3 = クエリから番号を復元。POST は judge.js と同じ', () => {
+  delete require.cache[require.resolve('../extension/judge_t')];
+  const base = require('../extension/judge');
+  const jt = require('../extension/judge_t'); // judge.js の後に読み込む（拡張機能と同じ順）
+  const cfg = { legit: 'psp.localhost:8081' };
+  const getRec = { url: SINK + '?' + BODY, method: 'GET', body: null, pageUrl: MPAGE };
+  assert.equal(base.judge(getRec, cfg).L1, false); // judge.js は POST 限定（D50）
+  const j = jt.judge(getRec, cfg);
+  assert.deepEqual([j.L1, j.L2, j.L3, j.L4, j.L4b], [true, 'sinkhole.localhost:8082', '4242424242424242', 'deny', 'deny']);
+  const postRec = { url: SINK, method: 'POST', body: BODY, pageUrl: MPAGE };
+  assert.deepEqual(jt.judge(postRec, cfg), base.judge(postRec, cfg));
+  assert.equal(jt.judge({ url: SINK + '?a=1', method: 'GET', body: null }, cfg).L3, null); // 番号がなければ null
+});
+test('拡張機能の版: transport つきの案A は強化版（OA_T）、案B は既定で現行（OB）、override で段階2（OB_T）。従来の条件は変わらない', () => {
+  const ext = require('../harness/extension');
+  const c = (id) => parseCondition(id);
+  assert.equal(ext.variantFor(c('TG-M-OA')), 'OA_T');
+  assert.equal(ext.variantFor(c('TG-M-OB')), 'OB');
+  assert.equal(ext.variantFor(c('TG-M-OB'), 'OB_T'), 'OB_T');
+  assert.equal(ext.variantFor(c('D-M-OA')), 'OA');
+  assert.equal(ext.variantFor(c('D-M-OB')), 'OB');
+  // 強化版・段階2 のファイルは、本実験の版と別のハッシュ。本実験の版のファイル一覧は変えていない
+  assert.notEqual(ext.currentHashes('OA_T').combined, ext.currentHashes('OA').combined);
+  assert.notEqual(ext.currentHashes('OB_T').combined, ext.currentHashes('OB').combined);
+  assert.deepEqual(ext.FILES.OA, ['main_a.js', 'relay_a.js', 'judge.js', 'reader.html']);
+  assert.deepEqual(ext.FILES.OB, ['sw_b.js', 'judge.js', 'reader.html']);
+});

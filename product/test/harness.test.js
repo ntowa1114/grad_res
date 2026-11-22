@@ -174,3 +174,46 @@ test('識別子は、シードから再現でき、英大文字・数字・ハ�
   assert.notEqual(a, identifier('D-M-OX-001', 12346));
   assert.match(a, /^ID-D-M-OX-001-[A-Z0-9]{4}$/);
 });
+
+// ---- 追加実験: 送信手段の拡張（D57、experiment_spec.md §14）。条件 T<B|G|F>-M-<観測点> ----
+test('条件IDの解析: T<B|G|F>-M-* は型 D・悪性・transport つき。従来の条件は transport: null。不正な書式は拒否', () => {
+  assert.deepEqual(parseCondition('TB-M-OA'), { id: 'TB-M-OA', type: 'D', kind: 'M', point: 'OA', transport: 'B' });
+  assert.equal(parseCondition('TG-M-OX').transport, 'G');
+  assert.equal(parseCondition('TF-M-OB').transport, 'F');
+  assert.equal(parseCondition('D-M-OX').transport, null);
+  for (const bad of ['TB-N-OX', 'TX-M-OX', 'T-M-OX', 'TBG-M-OX', 'TB-M-OC']) assert.throws(() => parseCondition(bad), /書式が不正/);
+});
+
+const SINK_URL = 'http://sinkhole.localhost:8082/c';
+const runT = (transport, mut) => {
+  const d = base();
+  if (transport === 'G') { // 画像GET: 全項目はクエリ。CDP も受信ログも GET
+    d.cdp[2] = { method: 'GET', url: SINK_URL + '?' + BODY, frameUrl: 'http://merchant.localhost:8080/checkout-m?t=G', type: 'Image', postData: null };
+    d.receive.sinkhole = [{ server: 'sinkhole', method: 'GET', path: '/c?' + BODY, body: '' }];
+  }
+  if (mut) mut(d);
+  return evaluate({ cond: parseCondition(`T${transport}-M-OX`), entered, identifier: ID, ...d });
+};
+
+test('TB・TF（POST の手段）: 従来の D-M-OX と同じ記録で全て合格', () => {
+  for (const t of ['B', 'F']) { const r = runT(t); assert.equal(r.valid, true, t); assert.deepEqual(failedIds(r), []); }
+});
+test('TG（画像GET）: sinkhole の GET が、クエリに全項目を持ち、CDP の GET と一致すれば全て合格', () => {
+  const r = runT('G'); assert.equal(r.valid, true); assert.deepEqual(failedIds(r), []);
+});
+test('TG #4: クエリから CVC が欠けていれば不合格（全項目一致が必要）', () => {
+  const r = runT('G', (d) => { d.receive.sinkhole[0].path = '/c?' + BODY.replace(/&cvc=123/, ''); d.cdp[2].url = SINK_URL + '?' + BODY.replace(/&cvc=123/, ''); });
+  assert.ok(failedIds(r).includes('4'));
+});
+test('TG #4: sinkhole の受信が POST なら不合格（手段 G は GET）。TB・TF で GET なら不合格', () => {
+  assert.ok(failedIds(runT('G', (d) => { d.receive.sinkhole[0].method = 'POST'; })).includes('4'));
+  assert.ok(failedIds(runT('B', (d) => { d.receive.sinkhole[0] = { server: 'sinkhole', method: 'GET', path: '/c?' + BODY, body: '' }; })).includes('4'));
+});
+test('TG T2: CDP に sinkhole 宛ての GET がなければ（件数が違えば）、URL が違えば、無効', () => {
+  assert.ok(failedIds(runT('G', (d) => { d.cdp = d.cdp.filter((c) => !c.url.includes('sinkhole')); })).includes('T2'));
+  assert.ok(failedIds(runT('G', (d) => { d.cdp[2].url = SINK_URL + '?x=1'; })).includes('T2'));
+});
+test('TG #5: 画像GET の宛先が範囲外のホストなら、不合格・安全停止（GET も隔離の対象）', () => {
+  const r = runT('G', (d) => { d.cdp.push({ method: 'GET', url: 'http://evil.example.com/x', frameUrl: null }); });
+  assert.ok(failedIds(r).includes('5')); assert.equal(r.safetyStop, true);
+});

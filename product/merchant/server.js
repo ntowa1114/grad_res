@@ -16,7 +16,8 @@ const SKIMMER_DIR = path.join(__dirname, '..', 'skimmer');
 const PSP_PAY_URL = 'http://psp.localhost:8081/pay';
 const http = require('node:http');
 
-function checkoutPage(withSkimmer) {
+// transport: 追加実験（D57）の送信手段 B|G|F。null・未指定は従来（fetch）。send.js が src のクエリ `t` で読む
+function checkoutPage(withSkimmer, transport) {
   return `<!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><title>checkout</title></head>
 <body>
@@ -38,7 +39,7 @@ document.getElementById('card-form').addEventListener('submit', function (ev) {
     .catch(function (e) { document.getElementById('result').textContent = 'error:' + e; });
 });
 </script>
-${withSkimmer ? '<script src="/skimmer/send.js"></script>\n<script src="/skimmer/model_x.js"></script>\n' : ''}</body></html>
+${withSkimmer ? `<script src="/skimmer/send.js${['B', 'G', 'F'].includes(transport) ? '?t=' + transport : ''}"></script>\n<script src="/skimmer/model_x.js"></script>\n` : ''}</body></html>
 `;
 }
 
@@ -101,7 +102,7 @@ module.exports = createReceiver({
   async respond(req, body) {
     const url = req.url.split('?')[0];
     if (req.method === 'GET' && url === '/checkout') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: checkoutPage(false) };
-    if (req.method === 'GET' && url === '/checkout-m') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: checkoutPage(true) };
+    if (req.method === 'GET' && url === '/checkout-m') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: checkoutPage(true, new URLSearchParams(req.url.split('?')[1] || '').get('t')) };
     if (req.method === 'GET' && url === '/checkout-i') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: iframePage(false) };
     if (req.method === 'GET' && url === '/checkout-i-m') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: iframePage(true) };
     if (req.method === 'GET' && url === '/checkout-j') return { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: jsFormPage(false) };

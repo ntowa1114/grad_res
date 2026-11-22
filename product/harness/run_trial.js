@@ -70,7 +70,8 @@ const CUSTOMER = {
     await page.waitForFunction(() => document.getElementById('result').textContent !== '', null, { timeout: 10000 });
   },
   async D(page, cond, entered) {
-    await page.goto('http://merchant.localhost:8080' + (cond.kind === 'M' ? '/checkout-m' : '/checkout'));
+    // 追加実験（D57）: transport があれば、スキマーの送信手段を ?t= で指定する（send.js が読む）
+    await page.goto('http://merchant.localhost:8080' + (cond.kind === 'M' ? '/checkout-m' + (cond.transport ? '?t=' + cond.transport : '') : '/checkout'));
     for (const k of ['cardnumber', 'exp', 'cvc', 'name']) await page.fill('#' + k, entered[k]);
     await page.click('#pay');
     await page.waitForFunction(() => document.getElementById('result').textContent !== '', null, { timeout: 10000 });
@@ -78,7 +79,8 @@ const CUSTOMER = {
 };
 
 // stopSw: 試行の後、読み出しの前に Service Worker を止める確認用（D52 の【未確認】。通常の試行では使わない）
-async function runTrial(conditionId, { outRoot = path.join(REPO_ROOT, 'expt_log'), stopSw = false } = {}) {
+// extVariant: 追加実験（D57）で、拡張機能の版を指定する（既定は ext.variantFor。案B 段階2 は 'OB_T'）
+async function runTrial(conditionId, { outRoot = path.join(REPO_ROOT, 'expt_log'), stopSw = false, extVariant = null } = {}) {
   const cond = parseCondition(conditionId);
   if (!CUSTOMER[cond.type]) throw new Error(`型 ${cond.type} は未実装`);
 
@@ -89,7 +91,7 @@ async function runTrial(conditionId, { outRoot = path.join(REPO_ROOT, 'expt_log'
   const seed = crypto.randomInt(0, 2 ** 32);
   const id = identifier(runId, seed);
   const entered = { ...ENTERED_BASE, name: id };
-  const meta = { runId, conditionId, trial, seed, identifier: id, entered, startedAt: new Date().toISOString() };
+  const meta = { runId, conditionId, trial, seed, identifier: id, entered, startedAt: new Date().toISOString(), ...(cond.transport ? { transport: cond.transport } : {}) };
   let browser; let context; let error = null; let cdpFile; let extInfo = null; let extRecords = null;
 
   try {
@@ -100,7 +102,8 @@ async function runTrial(conditionId, { outRoot = path.join(REPO_ROOT, 'expt_log'
       context = await browser.newContext(); // クリーンなプロファイル
     } else {
       // 拡張機能あり: 永続コンテキスト（新しい空のプロファイル）に、--load-extension で読み込む（NOTES #15）
-      extInfo = ext.prepare(cond.point);
+      meta.extVariant = ext.variantFor(cond, extVariant);
+      extInfo = ext.prepare(meta.extVariant);
       const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-'));
       context = await chromium.launchPersistentContext(profile, { channel: 'chromium', headless: true, args: ext.launchArgs(extInfo.dir), ignoreDefaultArgs: ['--disable-extensions'] });
       meta.browser = { name: 'chromium', channel: 'chromium', version: context.browser()?.version() ?? null, playwright: pkg.dependencies.playwright };
@@ -154,7 +157,8 @@ if (require.main === module) {
   const args = process.argv.slice(2);
   const oi = args.indexOf('--out');
   const outRoot = oi >= 0 ? path.resolve(args[oi + 1]) : undefined;
-  runTrial(args[0], { ...(outRoot ? { outRoot } : {}), stopSw: args.includes('--stop-sw') }).then(({ dir, meta }) => {
+  const ei = args.indexOf('--ext');
+  runTrial(args[0], { ...(outRoot ? { outRoot } : {}), stopSw: args.includes('--stop-sw'), ...(ei >= 0 ? { extVariant: args[ei + 1] } : {}) }).then(({ dir, meta }) => {
     console.log(`${meta.runId}: ${meta.valid ? '有効' : '無効'}  (${dir})`);
     meta.checks.forEach((c) => console.log(`  #${c.id} ${c.ok ? '合格' : '不合格'} ${c.name} — ${c.detail}`));
     if (meta.t1) {

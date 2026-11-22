@@ -13,8 +13,11 @@ const originOf = (u) => { try { return new URL(u).origin; } catch { return null;
 
 function t1({ cond, entered, legitUrl, cdp, receive, ext }) {
   const legitHost = hostOf(legitUrl);
-  const truth = cdp.filter((r) => r.method === 'POST' && isHttp(r.url));
-  const extPosts = ext.filter((r) => r.method === 'POST');
+  // 送信 = POST。追加実験の画像GET（条件 TG-*。D57）では、sinkhole 宛ての GET も送信に数える
+  // （PSP・加盟店への GET はページや script の取得なので数えない）
+  const isSend = (method, origin) => method === 'POST' || (cond.transport === 'G' && method === 'GET' && origin === ORIGINS.sinkhole);
+  const truth = cdp.filter((r) => isHttp(r.url) && isSend(r.method, originOf(r.url)));
+  const extPosts = ext.filter((r) => isSend(r.method, originOf(r.url)));
   const used = new Set();
   const perSend = [];
   for (const g of truth) {
@@ -37,7 +40,7 @@ function t1({ cond, entered, legitUrl, cdp, receive, ext }) {
   const outOfBrowser = [];
   for (const name of ['psp', 'sinkhole', 'merchant']) {
     const c = truth.filter((r) => originOf(r.url) === ORIGINS[name]).length;
-    const s = (receive[name] || []).filter((r) => r.method === 'POST').length;
+    const s = (receive[name] || []).filter((r) => isSend(r.method, ORIGINS[name])).length;
     if (s > c) outOfBrowser.push({ server: name, count: s - c });
   }
   const level = (k) => ({ match: perSend.filter((p) => p[k]).length, total: perSend.length });

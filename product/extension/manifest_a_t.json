@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "observer-a-t",
+  "version": "0.0.1",
+  "description": "観測点A 強化版（追加実験 D57）: fetch・sendBeacon・画像・form を横取りして記録する（MAIN world、all_frames=true、about:blank も）",
+  "permissions": ["storage"],
+  "content_scripts": [
+    { "matches": ["http://*.localhost/*"], "js": ["main_a_t.js"], "world": "MAIN", "run_at": "document_start", "all_frames": true, "match_about_blank": true },
+    { "matches": ["http://*.localhost/*"], "js": ["judge.js", "judge_t.js", "relay_a_t.js"], "run_at": "document_start", "all_frames": true, "match_about_blank": true }
+  ]
+}

@@ -6,11 +6,15 @@ const TYPES = ['R', 'I', 'D', 'J', 'A'];
 const KINDS = ['N', 'M'];
 const POINTS = ['OA', 'OB', 'OX'];
 
+// 送信手段の拡張（D57、experiment_spec.md §14）: 条件ID `T<B|G|F>-M-<観測点>`。型はダイレクトポスト型（D）で、悪性のみ。
+// transport: B = sendBeacon、G = 画像GET、F = form.submit。従来の条件は transport: null
 function parseCondition(id) {
+  const t = /^T([BGF])-M-(OA|OB|OX)$/.exec(id);
+  if (t) return { id, type: 'D', kind: 'M', point: t[2], transport: t[1] };
   const m = /^([RIDJA])-([NM])-(OA|OB|OX)$/.exec(id);
   if (!m) throw new Error(`条件IDの書式が不正: ${id}`);
   if (m[1] === 'R' && m[2] === 'M') throw new Error('R-M-* は作らない（D41）');
-  return { id, type: m[1], kind: m[2], point: m[3] };
+  return { id, type: m[1], kind: m[2], point: m[3], transport: null };
 }
 
 // 試行番号 = その条件の試行を始めた順の通し番号（無効試行も数える）

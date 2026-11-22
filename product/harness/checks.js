@@ -20,9 +20,13 @@ const LEGIT = {
 const MERCHANT_SERVER_UA = 'merchant-server'; // A3: 加盟店サーバーが PSP へ送るときの User-Agent（merchant/server.js。NOTES #38）
 
 const fields = (body) => Object.fromEntries(new URLSearchParams(body || ''));
-function sameAsEntered(rec, entered) {
-  if (rec.method !== 'POST') return false;
-  const f = fields(rec.body);
+// 受信ログ1件の、送られた項目。POST は本文、GET は path のクエリ（追加実験の画像GET。D57）
+const sentFields = (rec) => fields(rec.method === 'GET' ? String(rec.path || '').split('?')[1] : rec.body);
+// 受信ログ1件が識別子を運んでいるか（本文、または GET の path）
+const carries = (rec, identifier) => ((rec.body || '') + (rec.path || '')).includes(identifier);
+function sameAsEntered(rec, entered, method = 'POST') {
+  if (rec.method !== method) return false;
+  const f = sentFields(rec);
   const keys = Object.keys(entered);
   return Object.keys(f).length === keys.length && keys.every((k) => f[k] === entered[k]);
 }
@@ -65,10 +69,13 @@ function evaluate({ cond, entered, identifier, receive, cdp }) {
   }
 
   // #4 悪性送信: M は sinkhole に識別子が届き、内容が全項目一致。N は sinkhole の受信ログが空
+  // 追加実験（D57）: 送信手段 G（画像GET）の悪性送信は GET で、全項目はクエリに入る。他の手段（B・F・従来の fetch）は POST の本文
+  const sinkMethod = cond.transport === 'G' ? 'GET' : 'POST';
   if (cond.kind === 'M') {
-    const withId = receive.sinkhole.filter((r) => (r.body || '').includes(identifier));
-    const ok = withId.length >= 1 && withId.every((r) => sameAsEntered(r, entered)) && withId.length === receive.sinkhole.length;
-    add(4, '悪性送信', ok, `sinkhole の受信 ${receive.sinkhole.length} 件、うち識別子つき ${withId.length} 件、全て内容一致=${withId.every((r) => sameAsEntered(r, entered))}`);
+    const withId = receive.sinkhole.filter((r) => carries(r, identifier));
+    const allMatch = withId.every((r) => sameAsEntered(r, entered, sinkMethod));
+    const ok = withId.length >= 1 && allMatch && withId.length === receive.sinkhole.length;
+    add(4, '悪性送信', ok, `sinkhole の受信 ${receive.sinkhole.length} 件、うち識別子つき ${withId.length} 件、全て内容一致=${allMatch}（${sinkMethod}）`);
   } else {
     add(4, '悪性送信（正規では sinkhole が空）', receive.sinkhole.length === 0, `sinkhole の受信 ${receive.sinkhole.length} 件`);
   }
@@ -88,6 +95,14 @@ function evaluate({ cond, entered, identifier, receive, cdp }) {
   const xc = [];
   let bodyAvail = 0; let bodyTotal = 0;
   for (const name of ['psp', 'sinkhole', 'merchant']) {
+    // 追加実験の画像GET（D57）: sinkhole 宛ては GET を、CDP と受信ログで件数と URL（クエリ込み）で照合する（本文がないので取得率には入れない）
+    if (cond.transport === 'G' && name === 'sinkhole') {
+      const cg = cdp.filter((r) => r.method === 'GET' && isHttp(r.url) && originOf(r.url) === ORIGINS.sinkhole).map((r) => r.url).sort();
+      const sg = receive.sinkhole.filter((r) => r.method === 'GET').map((r) => ORIGINS.sinkhole + r.path).sort();
+      if (cg.length !== sg.length) xc.push(`sinkhole: GET 件数 CDP=${cg.length} 受信=${sg.length}`);
+      else if (JSON.stringify(cg) !== JSON.stringify(sg)) xc.push('sinkhole: GET の URL が不一致');
+      continue;
+    }
     const c = cdpPosts.filter((r) => originOf(r.url) === ORIGINS[name]);
     const s = receive[name].filter((r) => r.method === 'POST');
     // A型の PSP 宛ては加盟店サーバーから出る（ブラウザの外。外縁③）ので、CDP には出ない。件数は #3 で確認する
