@@ -1,0 +1,95 @@
+{
+  "runId": "S-N-OX-001",
+  "conditionId": "S-N-OX",
+  "trial": 1,
+  "seed": 3676056951,
+  "identifier": "ID-S-N-OX-001-2QLN",
+  "entered": {
+    "cardnumber": "4242424242424242",
+    "exp": "12/35",
+    "cvc": "123",
+    "postal": "12345"
+  },
+  "startedAt": "2026-11-20T04:50:47.387Z",
+  "variant": "stripe-test-mode",
+  "allowedHosts": [
+    "js.stripe.com",
+    "api.stripe.com",
+    "r.stripe.com",
+    "m.stripe.com",
+    "m.stripe.network",
+    "merchant-ui-api.stripe.com",
+    "b.stripecdn.com"
+  ],
+  "browser": {
+    "name": "chromium",
+    "channel": "chromium",
+    "version": "158.0.8127.18",
+    "playwright": "1.65.0"
+  },
+  "endedAt": "2026-11-20T04:51:00.312Z",
+  "stripeJs": {
+    "url": "https://js.stripe.com/v3/",
+    "sha256": "6443ae09a3fa83160edcbe0b30c67174eacc2827ef5825aad9d4de5a8ed4015c",
+    "fetchedAt": "2026-11-20T04:50:48.388Z"
+  },
+  "hashes": {
+    "extension": null,
+    "skimmer": null
+  },
+  "checks": [
+    {
+      "id": 1,
+      "name": "カード送信が1件",
+      "ok": true,
+      "detail": "番号を含む POST 1 件（うち https://api.stripe.com/v1/payment_methods 宛て 1 件）、発信元=https://js.stripe.com"
+    },
+    {
+      "id": 2,
+      "name": "createPaymentMethod の成功",
+      "ok": true,
+      "detail": "ページの結果表示=ok:pm_"
+    },
+    {
+      "id": 3,
+      "name": "加盟店サーバーの受信",
+      "ok": true,
+      "detail": "加盟店の POST 受信 0 件、番号を含む受信=false"
+    },
+    {
+      "id": 4,
+      "name": "悪性送信なし（正規）",
+      "ok": true,
+      "detail": "許可リスト外のホスト=[]"
+    },
+    {
+      "id": 5,
+      "name": "隔離と番号",
+      "ok": true,
+      "detail": "CDP の記録 51 件、範囲外=[]、名前解決の遮断の確認=blocked、公開テスト番号=true"
+    },
+    {
+      "id": "P",
+      "name": "preflight なし（D54）",
+      "ok": true,
+      "detail": "OPTIONS 0 件"
+    }
+  ],
+  "valid": true,
+  "invalidReasons": [],
+  "safetyStop": false,
+  "hostsContacted": [
+    "merchant.localhost",
+    "js.stripe.com",
+    "merchant-ui-api.stripe.com",
+    "r.stripe.com",
+    "m.stripe.network",
+    "m.stripe.com",
+    "api.stripe.com"
+  ],
+  "redaction": {
+    "key": "pk_test_REDACTED",
+    "note": "cdp.jsonl・extension.jsonl などに含まれる Stripe の公開可能キー（テストモード）の値を、保存後に pk_test_REDACTED へ置換した（D13 の例外の記録方針）",
+    "filesRewritten": 1
+  }
+}
