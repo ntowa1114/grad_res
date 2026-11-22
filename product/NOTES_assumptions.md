@@ -79,24 +79,20 @@
 | 69 | 2026-11-20 | Stripe 版 悪性（段階4） | 【実装判断】 | **Stripe 版の悪性ケースの方針（研究者が承認、2026-11-20。決定番号は付けない）: A + B。** A: 取得を伴う悪性（モデルX・モデルY）は測らず、「測定対象外（スキマー不成立）」と書く（D55。「観測できなかった」とは区別。D11）。モデルX は Stripe の iFrame（別オリジン）内を SOP で読めない予測（PoC F4）で、構造チェック `stripe/structure_check_stripe.js`（`contentDocument` が null）で実測する。モデルY は Stripe の入力欄を偽フォームに置き換える形になるため行わない。B: **取得なしの模擬送信**（`stripe/inject_send_stripe.js`）。「pay」ボタンの押下時に、固定の公開テスト番号と識別子（URL の `?id=`。D20）を、共通の送信部 `skimmer/send.js`（D23）で自作 sinkhole へ1回送るだけ。Stripe の入力欄は読まず、偽フォームも作らず、Stripe の見た目も使わない。目的: 実 Stripe の通信（約30件）の中で、案A・案Bが sinkhole 宛ての送信を見つけ、L1〜L4 を判定できるか。条件ID は `S-M-OX\|OA\|OB`（M = 取得なしの模擬送信。ダミー版の M（実スキマー）とは別物なので、結果は別の節に書く）。**限界: 取得部は再現していない。送信部だけを実 Stripe のページに足した。「スキミングを観測できた」とは書かない** | 研究者の承認（2026-11-20）、D11、D12、D13、D23、D32、D55 | Stripe 版の悪性 | 済 |
 | 70 | 2026-11-20 | Stripe 版 悪性（段階4） | 【実装判断】 | S-M の毎試行チェック（`checks_stripe.js`）: #1 は Stripe へのカード送信1件（sinkhole 宛ての番号つき POST は数えない）。#4 は「sinkhole の受信がちょうど1件で、識別子つき・全項目一致、許可リスト外のホストなし」（S-N では「sinkhole への通信なし」）。**#T2 は S-M で sinkhole 宛てだけ行う**（CDP の sinkhole 宛て POST 数 = 受信ログ件数。Stripe 側には受信ログがない）。T1（`t1_stripe.js`）は変更なしで、sinkhole 宛ては「正規宛先でない送信」として悪性側の内訳（`breakdown.malicious`）に入る。単体テスト（`test/stripe.test.js`）に S-M の合否テストを追加（27→+件）。実 Stripe への通信を伴う確認は未実施 | §6.2、D24、D48 | Stripe 版 S-M | 未 |
 
-## 引き継ぎ（2026-11-16 更新。D・I・J・A・R の全5型の縦切りが終わった時点）
+## 引き継ぎ（2026-11-20 更新。実 Stripe 版の悪性（S-M）まで終わった時点）
 
-### 依頼の範囲（研究者の指示の要約）
-- 実装の順序は D → I → J → A → R（D56）。各型で、EC・検体・案A・受信ログ・基準試行を通す縦切り。**全5型（9条件）の「拡張機能なしの基準試行」までが終わっている**。拡張機能（案A・案B。観測点 OA・OB）の実装は未着手。XHR はしない（D38①）。
-- 守ること: 変更してよいのは `product/` と `expt_log/`。原本は変更しない。`research_docs/` の更新は、`research_docs/CLAUDE.md` §8 の規則に従い、更新前に研究者へ知らせて確認を取る。`.env` を読まない。テストを勝手にスキップしない。D13（`*.localhost` のみ、公開テスト番号のみ）。全送信は単純リクエスト（D54。OPTIONS が出たら試行は無効）。正規送信は `fetch`（D49）。実測と予測を区別する。
-- 進め方: 作業計画を先に示して確認を取り、小さく段階的に進める。1段階ごとに報告する。仮定・未確認はこの表に追記する。基準試行（`expt_log/`）は、コードをコミットしてから実行する（`meta.json` に版が残らないため）。
+### 守ること
+- 変更してよいのは `product/` と `expt_log/`。原本は変更しない。`research_docs/` の更新は、`research_docs/CLAUDE.md` §8 の規則に従い、更新前に研究者へ知らせて確認を取る。`.env` と `product/stripe/local_key.txt`（Stripe のキー）を読まない。テストを勝手にスキップしない。コミット・pushは、指示があるまで行わない。
+- 安全方針（D13）: ダミー版は `*.localhost` のみ。実 Stripe 版は、許可リストの Stripe 7ホスト + `*.localhost` のみ（名前解決で止める。#62）。公開テスト番号のみ。実測と予測を区別する。作業計画を先に示して確認を取り、小さく段階的に進める。
+- 基準試行・本試行は、コードをコミットしてから実行する（`meta.json` に版が残らないため）。
 
 ### 終わったこと
-- 実行環境: WSL2 + Playwright 同梱 Chromium 158（`channel: 'chromium'` 必須。#14）。`research_docs/experiment_spec.md` §11 に反映済み。
-- 部品: `common/receiver.js`、`psp/`（`/pay`、`/frame`）、`sinkhole/`、`merchant/`（D型 `/checkout`・`/checkout-m`、I型 `/checkout-i`・`/checkout-i-m`、J型 `/checkout-j`・`/checkout-j-m`）。`psp/` は `/pay`、`/frame`、`/psp.js`、`skimmer/`（`send.js` 共通、`model_x.js`＝D型、`model_y.js`＝I型）、`harness/`（`ids.js`、`cdp.js`、`checks.js`、`run_trial.js`、`structure_check.js`）。
-- 基準試行（`expt_log/`、各1回、全て有効）: `D-N-OX-001`、`D-M-OX-001`、`I-N-OX-001`、`I-M-OX-001`（E6〜E9、F11〜F14 として `research_docs/` に反映済み）、`J-N-OX-001`、`J-M-OX-001`（E10・E11、F15 として `research_docs/` に反映済み。U-21 の J 型の部分は解消済みで、残りは Group 5 の図と Group 4 以外の送信 API）。
-- テスト: `node --test test/harness.test.js test/receivers.test.js`（27件）。構造チェック: `node harness/structure_check.js`（D1、D2、I1〜I3、J1、J2、S3、S4）。1試行の実行: `node harness/run_trial.js <条件ID>`（例 `J-M-OX`。出力先の既定は `expt_log/`、`--out <dir>` で変更）。
-- コミット済み（`research-docs-d49-d56` ブランチ。コード最新 81682d4）。
+- ダミー版: 5型の EC・スキマー（モデルX・Y）・測定の基盤・拡張機能（案A・案B）。基準試行 9条件（OX）、拡張機能あり 18条件 × 3回（旧版 54試行、現行版 L4b あり 54試行）。結果は `research_docs/experiment_index.md` E6〜E18、`analysis/findings.md` F11〜F23 に反映済み。
+- 実 Stripe 版（別枠）: `product/stripe/`。`S-N-OX|OA|OB`（正規）、`S-M-OX|OA|OB`（取得なしの模擬送信。#69）、構造チェック I3-S。E19〜E26、F24〜F28、`experiment_spec.md` §12 に反映済み（2026-11-20）。取得を伴う悪性は測定対象外（D55）。
+- テスト: `node --test test/stripe.test.js test/harness.test.js test/receivers.test.js test/summarize.test.js test/t1.test.js`（85件。2026-11-20 に全て合格）。
+- コミット: Stripe 版のコードはローカルの bfa63ea（`research-docs-d49-d56` ブランチ）。**`expt_log/S-*`（Stripe 版のログ）と、2026-11-20 の docs 更新は、未コミット・未push**。
 
-### 次にやること（研究者に選んでもらう。決まっていなければ最初に質問する）
-- 案1（J型は**完了。#35〜#37**。A型も**完了。#38〜#41**。R型も**完了。#42〜#44**）: J型（JavaScriptフォーム）。PSP の JS が加盟店ページ内に通常の DOM 要素でフォームを作り（D31）、モデルX がそれを読めるかは【仮説】（`research_docs/analysis/open_issues.md` U-21）。`harness/checks.js` の `LEGIT` に J を足し、`CUSTOMER.J`、`SKIMMER_FILES.J`、構造チェック（J1、J2）を追加する。→ A → R の順に続ける（A型の実装は #38〜#41。R型は、条件 `R-N-OX` だけ。悪性は測定対象外。D16）。
-- 案2: D型・I型の拡張機能（案A・案B）。`extension/` を作り、`run_trial.js` を OA・OB に対応させる。拡張機能の読み込みは `--load-extension` と `Extensions.loadUnpacked` の両方が動いた（#15）。記録の読み出しは、拡張機能のページから `chrome.storage.local.get`（#7、#16）。
-- どちらでも、作業前に計画を示して確認を取る。
-
-### 研究者に確認すること（未回答）
-- `research_decisions.md` に、実行環境（WSL2 + Chromium、`channel: 'chromium'`）を決定（D番号）として載せるか。今は `experiment_spec.md` §11 と `archive/decisions_history.md`（C21）だけ。
+### 未決・研究者に確認すること
+- U-29（L4b の不一致を T1 の「内容の誤り」に数えるか）、U-28（D37 の10回に増やした条件の読み方）、U-25（XHR をダミー版にも足すか。Stripe 版の案Aには足した。#68）、U-31（`S-N` の試行はコミット前のコードで実行。取り直すか）。
+- 実行環境（WSL2 + Chromium、`channel: 'chromium'`）を決定（D番号）として載せるか（今は `experiment_spec.md` §11 と `archive/decisions_history.md` C21）。
+- 残る技術的な未確認: U-10（Service Worker の自然な停止）、符号化・難読化、XHR 以外の送信手段、Stripe の Payment Element など他の入力方式、取得を伴う悪性（Stripe 版）。
