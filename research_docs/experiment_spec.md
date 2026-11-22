@@ -656,7 +656,7 @@ MAIN world・`all_frames=true` は変えない（D42）。現行（`main_a.js`�
 - 強化版の限界（測定しない）: HTML の文字列から作る要素（`innerHTML` など）の画像、ページが元の関数を保存して呼ぶ場合、`<link>`・`<script>` による GET、WebSocket、ページ遷移を伴うフォーム送信は、横取りしない。スキマーが使う手段は上の3つだけなので、結果には影響しない。
 - **回帰確認**: 強化版は、E15〜E26 の案Aとコード（ハッシュ）が違う。既存の結果は再測定しない。強化版で `D-M-OA`（`fetch`）を1回流し、T1 が従来と同じ（見逃し0、誤検出0、内容の誤り0。L4b は正規送信の誤判定で、従来の D 型と同じ）であることを確認した（2026-11-22。結果表には入れない。`expt_log/_regression/`。E34）。
 - 【実装判断】form の `submit` イベントは、ページの処理が `preventDefault` した送信（正規ページの `fetch` 送信）を記録しないよう、バブリング段階で `defaultPrevented` を見る（記録すると、正規の form が誤検出になる）。画像は、`src` の代入と `setAttribute` を横取りする。`match_about_blank` は有効にしたが、今回のスキマーは隠し iFrame の中では動かないので、この設定が効いた確認はしていない。
-- 【実装判断】判定の拡張は `judge_t.js`（`judge.js` の後に読み込む）で、GET の記録に限り、L1 = 記録したか（D50 の POST 限定を、追加実験で GET に広げる）、L3 = URL のクエリから番号を取り出す。案B 段階2（`sw_b_t.js`）が GET を記録する規則は、「type が image で、クエリを持つ GET」（ページや script の取得は記録しない）。この規則は私（実装者）の選択で、`product/NOTES_assumptions.md` #73。
+- 【実装判断】判定の拡張は `judge_t.js`（`judge.js` の後に読み込む）で、GET の記録に限り、L1 = 記録したか（D50 の POST 限定を、追加実験で GET に広げる）、L3 = URL のクエリから番号を取り出す。案B 段階2（`sw_b_t.js`）が GET を記録する規則は、「type が image で、クエリを持つ GET」（ページや script の取得は記録しない）。この規則と、L1 を GET に広げることは、私（実装者）の選択を、研究者が承認した（2026-11-22。`product/NOTES_assumptions.md` #73、`archive/open_issues_resolved.md` U-33）。実在のサイトでの誤検出は未測定で、限界に書く。
 
 ### 14.5 事前に固定する予測【仮説】（2026-11-22。測定前）
 
