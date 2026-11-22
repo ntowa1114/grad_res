@@ -98,6 +98,6 @@
 - コミット: Stripe 版のコードはローカルの bfa63ea（`research-docs-d49-d56` ブランチ）。**`expt_log/S-*`（Stripe 版のログ）と、2026-11-20 の docs 更新は、未コミット・未push**。
 
 ### 未決・研究者に確認すること
-- U-29（L4b の不一致を T1 の「内容の誤り」に数えるか）、U-28（D37 の10回に増やした条件の読み方）、U-25（XHR をダミー版にも足すか。Stripe 版の案Aには足した。#68）、U-31（`S-N` の試行はコミット前のコードで実行。取り直すか）。
+- U-29（L4b の不一致を T1 の「内容の誤り」に数えるか）、U-28（D37 の10回に増やした条件の読み方）、U-25（XHR をダミー版にも足すか。Stripe 版の案Aには足した。#68）、U-31（`S-N` の試行はコミット前のコードで実行。取り直さずこのまま使うと決定、2026-11-22。解消済み）。
 - 実行環境（WSL2 + Chromium、`channel: 'chromium'`）を決定（D番号）として載せるか（今は `experiment_spec.md` §11 と `archive/decisions_history.md` C21）。
 - 残る技術的な未確認: U-10（Service Worker の自然な停止）、符号化・難読化、XHR 以外の送信手段、Stripe の Payment Element など他の入力方式、取得を伴う悪性（Stripe 版）。
