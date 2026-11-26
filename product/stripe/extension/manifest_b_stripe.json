@@ -1,0 +1,9 @@
+{
+  "manifest_version": 3,
+  "name": "observer-b-stripe",
+  "version": "0.0.1",
+  "description": "観測点B（実 Stripe 版）: 内容はダミー版と同じ。権限と監視対象に、許可リストの Stripe ホストを足した（D9）",
+  "permissions": ["storage", "webRequest"],
+  "host_permissions": ["http://*.localhost/*", "https://js.stripe.com/*", "https://api.stripe.com/*", "https://r.stripe.com/*", "https://m.stripe.com/*", "https://m.stripe.network/*", "https://merchant-ui-api.stripe.com/*", "https://b.stripecdn.com/*"],
+  "background": { "service_worker": "sw_b_stripe.js" }
+}

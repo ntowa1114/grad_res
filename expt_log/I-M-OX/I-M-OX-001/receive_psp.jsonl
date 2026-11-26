@@ -1,0 +1,3 @@
+{"runId":"I-M-OX-001","t":"2026-11-12T14:30:43.060Z","server":"psp","method":"GET","path":"/frame","origin":null,"referer":"http://merchant.localhost:8080/","contentType":null,"body":""}
+{"runId":"I-M-OX-001","t":"2026-11-12T14:30:43.192Z","server":"psp","method":"GET","path":"/frame","origin":null,"referer":"http://merchant.localhost:8080/","contentType":null,"body":""}
+{"runId":"I-M-OX-001","t":"2026-11-12T14:30:43.346Z","server":"psp","method":"POST","path":"/pay","origin":"http://psp.localhost:8081","referer":"http://psp.localhost:8081/frame","contentType":"application/x-www-form-urlencoded;charset=UTF-8","body":"cardnumber=4242424242424242&exp=12%2F30&cvc=123&name=ID-I-M-OX-001-WMBW"}

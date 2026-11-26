@@ -1,0 +1,141 @@
+{
+  "runId": "I-M-OB-001",
+  "conditionId": "I-M-OB",
+  "trial": 1,
+  "seed": 3722198886,
+  "identifier": "ID-I-M-OB-001-HRZ5",
+  "entered": {
+    "cardnumber": "4242424242424242",
+    "exp": "12/30",
+    "cvc": "123",
+    "name": "ID-I-M-OB-001-HRZ5"
+  },
+  "startedAt": "2026-11-16T05:30:04.252Z",
+  "browser": {
+    "name": "chromium",
+    "channel": "chromium",
+    "version": "158.0.8127.18",
+    "playwright": "1.65.0"
+  },
+  "endedAt": "2026-11-16T05:30:05.531Z",
+  "hashes": {
+    "extension": {
+      "point": "OB",
+      "files": {
+        "sw_b.js": "a70e8a444bab311dabf4545f1e763ba2ef64d4f265242a7b6b285d0b3d9fb935",
+        "judge.js": "048b58c64b8275de8e78c1edf506a26d59cd1a6732f1fb5cef0207da7ea838a3",
+        "reader.html": "cbf20438ae664e259c51f7f80ac8f6187638a28249c46c18274e7a23e53b9a3f",
+        "manifest_b.json": "2e6005860472900c259afa84d511be1c223cfdd4e9463ce152c96ebaea358002"
+      },
+      "combined": "956ea288e02e4a53279a49ba8c995be5f7d200a3b4e8c90fe29f719a7a5811a7",
+      "settings": {
+        "world": null,
+        "all_frames": null
+      }
+    },
+    "skimmer": {
+      "send.js": "f6153db42bcadbb77be2ebd403f246c1a74fea2de6aa3b380bce0ba5ac4564be",
+      "model_y.js": "f77a0eef7f6a67e8cb2af0474f2325afb5aaf8d3cc5ab0e58a0177071da99ed3"
+    }
+  },
+  "checks": [
+    {
+      "id": 1,
+      "name": "正規送信の受け手",
+      "ok": true,
+      "detail": "psp の識別子つき受信 1 件、内容一致=true"
+    },
+    {
+      "id": 2,
+      "name": "正規宛先と発信元",
+      "ok": true,
+      "detail": "sinkhole 以外の CDP の POST 1 件、宛先=http://psp.localhost:8081/pay、発信元=http://psp.localhost:8081"
+    },
+    {
+      "id": 3,
+      "name": "加盟店サーバーの受信",
+      "ok": true,
+      "detail": "加盟店の識別子つき受信 0 件"
+    },
+    {
+      "id": 4,
+      "name": "悪性送信",
+      "ok": true,
+      "detail": "sinkhole の受信 1 件、うち識別子つき 1 件、全て内容一致=true"
+    },
+    {
+      "id": 5,
+      "name": "隔離と番号",
+      "ok": true,
+      "detail": "CDP の記録 8 件、範囲外のホスト=[]、公開テスト番号=true"
+    },
+    {
+      "id": "P",
+      "name": "preflight なし（D54）",
+      "ok": true,
+      "detail": "OPTIONS 0 件"
+    },
+    {
+      "id": "T2",
+      "name": "受信ログと CDP の突き合わせ（D24）",
+      "ok": true,
+      "detail": "一致（CDP が本文を取れた POST 2/2）"
+    }
+  ],
+  "valid": true,
+  "invalidReasons": [],
+  "safetyStop": false,
+  "cdpBodyAvailable": {
+    "available": 2,
+    "total": 2
+  },
+  "t1": {
+    "perLevel": {
+      "L1": {
+        "match": 2,
+        "total": 2,
+        "falsePositives": 0
+      },
+      "L2": {
+        "match": 2,
+        "total": 2
+      },
+      "L3": {
+        "match": 2,
+        "total": 2
+      },
+      "L4": {
+        "match": 2,
+        "total": 2
+      }
+    },
+    "trialMatch": {
+      "L1": true,
+      "L2": true,
+      "L3": true,
+      "L4": true
+    },
+    "missed": 0,
+    "falsePositives": 0,
+    "contentErrors": 0,
+    "outOfBrowser": [],
+    "perSend": [
+      {
+        "url": "http://sinkhole.localhost:8082/c",
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": true,
+        "L4": true
+      },
+      {
+        "url": "http://psp.localhost:8081/pay",
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": true,
+        "L4": true
+      }
+    ]
+  }
+}

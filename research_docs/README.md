@@ -3,7 +3,7 @@
 卒業研究「EC決済ページにおけるカード情報送信の消費者側観測可能性の評価」（佐古研究室）の整理資料です。
 **現行の決定と現状だけを書いています。** 過去の版と方針変更の経緯は `archive/` にあります（作業前に読む必要はありません）。資料にない情報は「未確認」と記載しています。
 
-更新日: 2026-11-12（2026-11-02 の設計の決定を反映して再構成。2026-11-10 に D12 の変更＝実 Stripe は範囲外、を反映。2026-11-12 に実装前の決定 D49〜D56 を反映）
+更新日: 2026-11-22（2026-11-02 の設計の決定を反映して再構成。2026-11-10 に D12 の変更＝実 Stripe は範囲外、を反映。2026-11-12 に実装前の決定 D49〜D56 を反映。2026-11-16 に5型の基準試行 E6〜E14、F11〜F17、E-16 の解消、拡張機能あり18条件 × 3回 E15〜E17、F18〜F21 を反映。2026-11-17 に L4b の追加（D51）、D12・D13 の変更（実 Stripe 版を別枠で作る）、E18、F22・F23 を反映。2026-11-20 に実 Stripe 版の結果 E19〜E26、F24〜F28、`experiment_spec.md` §12、D13 の隔離の確認方法（C25）を反映。2026-11-22 に結論の置き方の方向性 Q14（未確定）、`analysis/findings.md` §2.1、`experiment_spec.md` §13（L4 の判定ルールの比較。実行前に固定）を追加。同日に実施し、E27・F29 を反映。同日に追加実験「送信手段の拡張」（D57、C26、`experiment_spec.md` §14）を実施し、E28〜E34、F30〜F32、U-32・U-33 を反映。U-32・U-33 は同日に解消。同日に PCI DSS v4.0.1 [PCIDSS] を追加し、`literature/pci_dss_v4_0_1.md` を作成）
 
 ## 1. 研究の概要
 
@@ -12,7 +12,7 @@
 - **重心:** 検知器の精度向上ではなく、「どこまで観測・判定でき、どこで見えなくなるか」の境界を示すこと。（D2）
 - **観測点:** 拡張機能の案A（ページ内で fetch を横取り）と案B（webRequest）。正解記録は受信ログ + CDP。（D9、D18）
 - **実験対象:** PCI の5型のEC（リダイレクト型は正規ケースのみ）に、2種類のスキマー（取得部と送信部）を埋め込む。（D5、D6、D16、D23、D26）
-- **現状:** 実測は PoC（直接送信型・iframeホスト型の2方式、平文送信のみ）まで。5型のEC、スキマー、拡張機能、測定の実装はまだ無い。（[P]、`experiment_index.md`）
+- **現状:** PoC（直接送信型・iframeホスト型の2方式、平文送信のみ）の実測に加え、5型のEC、2種類のスキマー、測定の基盤（受信ログ・CDP・毎試行チェック）を実装し、拡張機能なしの基準試行9条件を各1回実施した（全て有効。2026-11-16）。拡張機能（案A・案B）を実装し、18条件 × 各3回（54試行）を実施した（全て有効。L1〜L3 と、正規宛先を渡す L4a は全欄 3/3 ○。**正規宛先を渡さない L4b は、ダイレクトポスト型・JavaScriptフォーム型の正規送信で 0/3 ×**。**自作EC・平文・`fetch` のみの条件での結果で、一般化しない**。F18〜F23）。別枠で、実 Stripe（テストモード）の版（`S-N`、取得なしの模擬送信 `S-M`）も測った（E19〜E26、F24〜F28。取得を伴う悪性は測定対象外。`experiment_spec.md` §12。Stripe 1社・Card Element・各3回で、一般化しない）。（[P]、`experiment_index.md`、`analysis/findings.md`）
 
 詳細は `research_plan.md` を参照。
 
@@ -23,12 +23,13 @@
 | `README.md` | 入口。概要、ファイル一覧、資料の参照方法 | （なし） |
 | `CLAUDE.md` | Claude Code 向けの作業ルールと参照先 | 作業ルール |
 | `research_plan.md` | 背景、目的、研究課題、対象範囲、貢献 | 研究計画の記述 |
-| `research_decisions.md` | 現行の決定（D）と、決定に関わる未確定の論点（Q。2026-11-10 時点で残りなし） | 方針・設計判断 |
+| `research_decisions.md` | 現行の決定（D）と、決定に関わる未確定の論点（Q。2026-11-22 時点で Q14 のみ） | 方針・設計判断 |
 | `observation_model.md` | 用語、観測レベル L1〜L4、5型、スキマーモデル、評価基準 | 用語・観測モデルの定義 |
-| `experiment_spec.md` | 実験の設計、テスト、全体像（§1〜§8、§10、§11 が記述済み。§9 は未確定事項の一覧） | 実験環境の設計・テスト |
+| `experiment_spec.md` | 実験の設計、テスト、全体像（§1〜§8、§10〜§13 が記述済み。§9 は未確定事項の一覧。§12 は実 Stripe 版、§13 は L4 の判定ルールの比較） | 実験環境の設計・テスト |
 | `experiment_index.md` | 実験の一覧、条件、結果の要約、未実施との区別 | 実験の索引（生ログは原本） |
 | `literature/bower_2019.md` | Bower (2019) の整理 | 同論文の主張の要約 |
-| `literature/pci_dss_ecommerce_2017.md` | PCI DSS 補足文書の整理 | 同文書の主張の要約 |
+| `literature/pci_dss_ecommerce_2017.md` | PCI DSS 補足文書（2017年）の整理 | 同文書の主張の要約 |
+| `literature/pci_dss_v4_0_1.md` | PCI DSS v4.0.1（要件とテスト手順。日本語版）の整理（適用情報、6.4.3、11.6.1 など） | 同文書の主張の要約 |
 | `literature/riskiq_inside_magecart_2018.md` | RiskIQ/Flashpoint 報告書の整理（スキマーのグループごとの挙動） | 同報告書の主張の要約 |
 | `analysis/findings.md` | 判明したこと、卒論で主張できること（候補）と根拠の対応 | 主張と根拠の対応表 |
 | `analysis/open_issues.md` | 現在も未解決の事項、情報不足、資料間の矛盾 | 未解決事項の一覧 |
@@ -46,7 +47,7 @@
 | 実験の条件・結果 | `experiment_index.md`（要約） | [P]（ログ・詳細、**正本**）、[H §8] |
 | 判明したこと・主張と根拠 | `analysis/findings.md` | [P], [H] |
 | 未解決事項・矛盾 | `analysis/open_issues.md` | 各原本 |
-| Bower・PCI・RiskIQ の主張 | `literature/`（要約） | [B], [BJ], [PCI], [RQ]（**正本**） |
+| Bower・PCI・RiskIQ の主張 | `literature/`（要約） | [B], [BJ], [PCI], [PCIDSS], [RQ]（**正本**） |
 | 研究の背景・目的・範囲 | `research_plan.md` | [H], [S] |
 
 何が変わったら、どのファイルを更新するかは `CLAUDE.md` §8 に表があります。
@@ -70,11 +71,12 @@
 | [B] | [BowerT-Industry-project-identifying-JavaScript-skimmers-on-high-value-websites.pdf](../参考文献/論文原文/BowerT-Industry-project-identifying-JavaScript-skimmers-on-high-value-websites.pdf) | Bower 論文（英語原文） |
 | [BJ] | [Bower先行研究論文(日本語).pdf](../参考文献/論文原文/Bower先行研究論文%28日本語%29.pdf) | Bower 論文の非公式日本語訳 |
 | [PCI] | [best_practices_securing_ecommerce.pdf](../参考文献/論文原文/best_practices_securing_ecommerce.pdf) | PCI DSS 補足文書（2017年4月） |
+| [PCIDSS] | [PCI-DSS-v4_0_1-JA.pdf](../参考文献/論文原文/PCI-DSS-v4_0_1-JA.pdf) | PCI DSS v4.0.1 要件とテスト手順（2024年6月、日本語版）。[PCI]（補足文書）とは別 |
 | [RQ] | [Flashpoint_RiskIQ_Inside_MageCart.pdf](../参考文献/論文原文/Flashpoint_RiskIQ_Inside_MageCart.pdf) | RiskIQ/Flashpoint 報告書（2018年。[S P25] の [9]） |
 
 - 節番号は「§」、ページは「p.」、スライドは「P」、決定は「D」「Q」で示します。
 - PoC のコード（`https://github.com/ntowa1114/pocv1`）は本リポジトリに含まれません。[H §11]
-- `product/` は空です（2026-10-24）。研究者の方針で、PoC は実施済みの事実として扱い、実験対象（5型のEC、スキマー、拡張機能、測定）の実装はまだ無いものとして設計します。実装コードは `product/` に置き（Node.js + 素の JavaScript + Playwright）、実装の順序は D → I → J → A → R です（D53、D56。`experiment_spec.md` §11）。
+- `product/` は、2026-10-24 時点では空でした。研究者の方針で、PoC は実施済みの事実として扱い、実験対象は新しく実装します。実装コードは `product/` に置き（Node.js + 素の JavaScript + Playwright）、実装の順序は D → I → J → A → R です（D53、D56。`experiment_spec.md` §11）。2026-11-20 時点で、5型のEC・スキマー・測定の基盤、`extension/`（拡張機能。案A・案B）、`stripe/`（実 Stripe 版。別枠。§12）を実装済みです。実装中の仮定・未確認は `product/NOTES_assumptions.md`（作業記録。決定ではない）、実験の生ログは `expt_log/` にあります。
 - `.git/` は管理用ディレクトリで、研究資料ではありません。
 
 ## 4. 出典・記述の区別

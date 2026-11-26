@@ -1,0 +1,1 @@
+{"runId":"J-N-OA-001","body":"cardnumber=4242424242424242&exp=12%2F30&cvc=123&name=ID-J-N-OA-001-S82E","bodyKind":"urlsearchparams","judge":{"L1":true,"L2":"psp.localhost:8081","L3":"4242424242424242","L4":"allow"},"method":"POST","observationPoint":"A","pageUrl":"http://merchant.localhost:8080/checkout-j","t":1794807006282,"top":true,"url":"http://psp.localhost:8081/pay"}

@@ -1,0 +1,491 @@
+{
+  "runId": "S-N-OA-001",
+  "conditionId": "S-N-OA",
+  "trial": 1,
+  "seed": 1840106601,
+  "identifier": "ID-S-N-OA-001-NGFV",
+  "entered": {
+    "cardnumber": "4242424242424242",
+    "exp": "12/35",
+    "cvc": "123",
+    "postal": "12345"
+  },
+  "startedAt": "2026-11-20T04:52:11.806Z",
+  "variant": "stripe-test-mode",
+  "allowedHosts": [
+    "js.stripe.com",
+    "api.stripe.com",
+    "r.stripe.com",
+    "m.stripe.com",
+    "m.stripe.network",
+    "merchant-ui-api.stripe.com",
+    "b.stripecdn.com"
+  ],
+  "browser": {
+    "name": "chromium",
+    "channel": "chromium",
+    "version": "158.0.8127.18",
+    "playwright": "1.65.0"
+  },
+  "endedAt": "2026-11-20T04:52:24.122Z",
+  "stripeJs": {
+    "url": "https://js.stripe.com/v3/",
+    "sha256": "6443ae09a3fa83160edcbe0b30c67174eacc2827ef5825aad9d4de5a8ed4015c",
+    "fetchedAt": "2026-11-20T04:52:12.414Z"
+  },
+  "hashes": {
+    "extension": {
+      "point": "OA",
+      "variant": "stripe",
+      "files": {
+        "main_a.js": "d435af1cb16468224570c904a71ba8a744d386042f7e8d5a9dbb3a011d25dd4a",
+        "relay_a.js": "6aac9e3ee900bb5c0b1ee610b65989c4b8071ba4fc818912a25f37e761bdfdc3",
+        "judge.js": "217f6c8d32c0863d4dd07eb76eba6e67534bcefb05ff5bafa5af3bcb628f7484",
+        "reader.html": "cbf20438ae664e259c51f7f80ac8f6187638a28249c46c18274e7a23e53b9a3f",
+        "manifest_a_stripe.json": "0a238622d3107c7a0ace90aaaa054e6d9ee1fea9234b4a155183debaccc55c1c"
+      },
+      "combined": "682b6422413cf8e0ebb204ecdedfdafe539dd4a518cacde1882b19c5fb9d6e83",
+      "settings": {
+        "world": "MAIN",
+        "all_frames": true
+      }
+    },
+    "skimmer": null
+  },
+  "checks": [
+    {
+      "id": 1,
+      "name": "カード送信が1件",
+      "ok": true,
+      "detail": "番号を含む POST 1 件（うち https://api.stripe.com/v1/payment_methods 宛て 1 件）、発信元=https://js.stripe.com"
+    },
+    {
+      "id": 2,
+      "name": "createPaymentMethod の成功",
+      "ok": true,
+      "detail": "ページの結果表示=ok:pm_"
+    },
+    {
+      "id": 3,
+      "name": "加盟店サーバーの受信",
+      "ok": true,
+      "detail": "加盟店の POST 受信 0 件、番号を含む受信=false"
+    },
+    {
+      "id": 4,
+      "name": "悪性送信なし（正規）",
+      "ok": true,
+      "detail": "許可リスト外のホスト=[]"
+    },
+    {
+      "id": 5,
+      "name": "隔離と番号",
+      "ok": true,
+      "detail": "CDP の記録 48 件、範囲外=[]、名前解決の遮断の確認=blocked、公開テスト番号=true"
+    },
+    {
+      "id": "P",
+      "name": "preflight なし（D54）",
+      "ok": true,
+      "detail": "OPTIONS 0 件"
+    }
+  ],
+  "valid": true,
+  "invalidReasons": [],
+  "safetyStop": false,
+  "hostsContacted": [
+    "merchant.localhost",
+    "js.stripe.com",
+    "merchant-ui-api.stripe.com",
+    "r.stripe.com",
+    "m.stripe.com",
+    "api.stripe.com"
+  ],
+  "t1": {
+    "scope": "card-sends-only",
+    "perLevel": {
+      "L1": {
+        "match": 1,
+        "total": 1,
+        "falsePositives": 0
+      },
+      "L2": {
+        "match": 1,
+        "total": 1
+      },
+      "L3": {
+        "match": 1,
+        "total": 1
+      },
+      "L4": {
+        "match": 1,
+        "total": 1
+      },
+      "L4b": {
+        "match": 0,
+        "total": 1
+      }
+    },
+    "trialMatch": {
+      "L1": true,
+      "L2": true,
+      "L3": true,
+      "L4": true,
+      "L4b": false
+    },
+    "missed": 0,
+    "falsePositives": 0,
+    "contentErrors": 0,
+    "breakdown": {
+      "legit": {
+        "L4": {
+          "match": 1,
+          "total": 1
+        },
+        "L4b": {
+          "match": 0,
+          "total": 1
+        }
+      },
+      "malicious": {
+        "L4": {
+          "match": 0,
+          "total": 0
+        },
+        "L4b": {
+          "match": 0,
+          "total": 0
+        }
+      }
+    },
+    "other": {
+      "total": 27,
+      "observed": 24,
+      "L1": {
+        "match": 24,
+        "total": 27
+      },
+      "L2": {
+        "match": 24,
+        "total": 27
+      },
+      "missed": 3
+    },
+    "outOfBrowser": [],
+    "perSend": [
+      {
+        "url": "https://merchant-ui-api.stripe.com/elements/wallet-config",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      },
+      {
+        "url": "https://r.stripe.com/b",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      },
+      {
+        "url": "https://r.stripe.com/b",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      },
+      {
+        "url": "https://r.stripe.com/b",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      },
+      {
+        "url": "https://r.stripe.com/b",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      },
+      {
+        "url": "https://r.stripe.com/b",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      },
+      {
+        "url": "https://r.stripe.com/b",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      },
+      {
+        "url": "https://r.stripe.com/b",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      },
+      {
+        "url": "https://r.stripe.com/b",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      },
+      {
+        "url": "https://r.stripe.com/b",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      },
+      {
+        "url": "https://r.stripe.com/b",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      },
+      {
+        "url": "https://m.stripe.com/6",
+        "card": false,
+        "legit": false,
+        "observed": false,
+        "L1": false,
+        "L2": false,
+        "L3": false,
+        "L4": false,
+        "L4b": false
+      },
+      {
+        "url": "https://r.stripe.com/b",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      },
+      {
+        "url": "https://r.stripe.com/b",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      },
+      {
+        "url": "https://r.stripe.com/b",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      },
+      {
+        "url": "https://r.stripe.com/b",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      },
+      {
+        "url": "https://r.stripe.com/b",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      },
+      {
+        "url": "https://r.stripe.com/b",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      },
+      {
+        "url": "https://r.stripe.com/b",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      },
+      {
+        "url": "https://m.stripe.com/6",
+        "card": false,
+        "legit": false,
+        "observed": false,
+        "L1": false,
+        "L2": false,
+        "L3": false,
+        "L4": false,
+        "L4b": false
+      },
+      {
+        "url": "https://m.stripe.com/6",
+        "card": false,
+        "legit": false,
+        "observed": false,
+        "L1": false,
+        "L2": false,
+        "L3": false,
+        "L4": false,
+        "L4b": false
+      },
+      {
+        "url": "https://r.stripe.com/b",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      },
+      {
+        "url": "https://r.stripe.com/b",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      },
+      {
+        "url": "https://r.stripe.com/b",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      },
+      {
+        "url": "https://r.stripe.com/b",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      },
+      {
+        "url": "https://api.stripe.com/v1/payment_methods",
+        "card": true,
+        "legit": true,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": true,
+        "L4": true,
+        "L4b": false
+      },
+      {
+        "url": "https://r.stripe.com/b",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      },
+      {
+        "url": "https://r.stripe.com/b",
+        "card": false,
+        "legit": false,
+        "observed": true,
+        "L1": true,
+        "L2": true,
+        "L3": false,
+        "L4": true,
+        "L4b": true
+      }
+    ]
+  },
+  "redaction": {
+    "key": "pk_test_REDACTED",
+    "note": "cdp.jsonl・extension.jsonl などに含まれる Stripe の公開可能キー（テストモード）の値を、保存後に pk_test_REDACTED へ置換した（D13 の例外の記録方針）",
+    "filesRewritten": 2
+  }
+}

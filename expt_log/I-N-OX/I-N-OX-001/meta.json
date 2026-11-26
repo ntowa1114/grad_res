@@ -1,0 +1,76 @@
+{
+  "runId": "I-N-OX-001",
+  "conditionId": "I-N-OX",
+  "trial": 1,
+  "seed": 4250795307,
+  "identifier": "ID-I-N-OX-001-2KPR",
+  "entered": {
+    "cardnumber": "4242424242424242",
+    "exp": "12/30",
+    "cvc": "123",
+    "name": "ID-I-N-OX-001-2KPR"
+  },
+  "startedAt": "2026-11-12T14:30:41.393Z",
+  "browser": {
+    "name": "chromium",
+    "channel": "chromium",
+    "version": "158.0.8127.18",
+    "playwright": "1.65.0"
+  },
+  "endedAt": "2026-11-12T14:30:42.505Z",
+  "hashes": {
+    "extension": null,
+    "skimmer": null
+  },
+  "checks": [
+    {
+      "id": 1,
+      "name": "正規送信の受け手",
+      "ok": true,
+      "detail": "PSP の識別子つき受信 1 件、内容一致=true"
+    },
+    {
+      "id": 2,
+      "name": "正規宛先と発信元",
+      "ok": true,
+      "detail": "sinkhole 以外の CDP の POST 1 件、宛先=http://psp.localhost:8081/pay、発信元=http://psp.localhost:8081"
+    },
+    {
+      "id": 3,
+      "name": "加盟店サーバーの受信",
+      "ok": true,
+      "detail": "加盟店の識別子つき受信 0 件"
+    },
+    {
+      "id": 4,
+      "name": "悪性送信（正規では sinkhole が空）",
+      "ok": true,
+      "detail": "sinkhole の受信 0 件"
+    },
+    {
+      "id": 5,
+      "name": "隔離と番号",
+      "ok": true,
+      "detail": "CDP の記録 4 件、範囲外のホスト=[]、公開テスト番号=true"
+    },
+    {
+      "id": "P",
+      "name": "preflight なし（D54）",
+      "ok": true,
+      "detail": "OPTIONS 0 件"
+    },
+    {
+      "id": "T2",
+      "name": "受信ログと CDP の突き合わせ（D24）",
+      "ok": true,
+      "detail": "一致（CDP が本文を取れた POST 1/1）"
+    }
+  ],
+  "valid": true,
+  "invalidReasons": [],
+  "safetyStop": false,
+  "cdpBodyAvailable": {
+    "available": 1,
+    "total": 1
+  }
+}
